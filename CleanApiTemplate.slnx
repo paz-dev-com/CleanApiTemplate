@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="CleanApiTemplate.API/CleanApiTemplate.API.csproj" />
+  <Project Path="CleanApiTemplate.Application/CleanApiTemplate.Application.csproj" />
+  <Project Path="CleanApiTemplate.Core/CleanApiTemplate.Core.csproj" />
+  <Project Path="CleanApiTemplate.Data/CleanApiTemplate.Data.csproj" />
+  <Project Path="CleanApiTemplate.Infrastructure/CleanApiTemplate.Infrastructure.csproj" />
+</Solution>
