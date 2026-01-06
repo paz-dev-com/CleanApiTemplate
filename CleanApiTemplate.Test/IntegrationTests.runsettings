@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <ResultsDirectory>.\TestResults</ResultsDirectory>
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- Longer timeout for integration tests -->
+    <TestSessionTimeout>300000</TestSessionTimeout>
+  </RunConfiguration>
+  
+  <!-- Filter to include only integration tests -->
+  <TestRunParameters>
+    <Parameter name="TestCategory" value="Integration" />
+  </TestRunParameters>
+  
+  <!-- Use DataCollector for code coverage -->
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

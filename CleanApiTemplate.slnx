@@ -4,4 +4,5 @@
   <Project Path="CleanApiTemplate.Core/CleanApiTemplate.Core.csproj" />
   <Project Path="CleanApiTemplate.Data/CleanApiTemplate.Data.csproj" />
   <Project Path="CleanApiTemplate.Infrastructure/CleanApiTemplate.Infrastructure.csproj" />
+  <Project Path="CleanApiTemplate.Test/CleanApiTemplate.Test.csproj" Id="ecada7a6-fb60-4ace-91fa-eb570325a1bf" />
 </Solution>

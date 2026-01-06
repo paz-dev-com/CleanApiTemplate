@@ -18,8 +18,8 @@ public class CryptographyService : ICryptographyService
     {
         // IMPORTANT: In production, load these from secure configuration (KeyVault)
         // This is just for demonstration purposes
-        _defaultKey = Encoding.UTF8.GetBytes("YourSecure32CharacterKeyHere!!!"); // 32 bytes for AES-256
-        _defaultIV = Encoding.UTF8.GetBytes("YourSecure16IV!!"); // 16 bytes
+        _defaultKey = Encoding.UTF8.GetBytes("12345678901234567890123456789012"); // 32 bytes for AES-256
+        _defaultIV = Encoding.UTF8.GetBytes("1234567890123456"); // 16 bytes
     }
 
     /// <summary>
