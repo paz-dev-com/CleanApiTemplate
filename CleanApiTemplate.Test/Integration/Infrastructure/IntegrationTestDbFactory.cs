@@ -20,16 +20,25 @@ public class IntegrationTestDbFactory : IAsyncLifetime
 
     public IntegrationTestDbFactory()
     {
-        // Build configuration to read connection string
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.Test.json", optional: true)
-            .AddJsonFile("../../../appsettings.Test.json", optional: true)
-            .Build();
+        // First check for environment variable (used in CI/CD)
+        var envConnectionString = Environment.GetEnvironmentVariable("ConnectionStrings__TestConnection");
+        
+        if (!string.IsNullOrEmpty(envConnectionString))
+        {
+            _connectionString = envConnectionString;
+        }
+        else
+        {
+            // Fall back to configuration file (for local development)
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.Test.json", optional: true)
+                .AddJsonFile("../../../appsettings.Test.json", optional: true)
+                .Build();
 
-        // Get test connection string or use default
-        _connectionString = configuration.GetConnectionString("TestConnection")
-            ?? "Server=tcp:localhost,1433;Initial Catalog=CleanApiTemplate_Test;Persist Security Info=False;User ID=sa;Password=P@ssw0rd;MultipleActiveResultSets=True;Connection Timeout=30;TrustServerCertificate=True;";
+            _connectionString = configuration.GetConnectionString("TestConnection")
+                ?? "Server=tcp:localhost,1433;Initial Catalog=CleanApiTemplate_Test;Persist Security Info=False;User ID=sa;Password=P@ssw0rd123!;MultipleActiveResultSets=True;Connection Timeout=30;TrustServerCertificate=True;";
+        }
     }
 
     /// <summary>

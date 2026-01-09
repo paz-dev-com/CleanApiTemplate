@@ -7,6 +7,8 @@ on:
 
 env:
   DOTNET_VERSION: '8.0.x'
+  SOLUTION_PATH: './CleanApiTemplate.sln'
+  TEST_PROJECT: './CleanApiTemplate.Test/CleanApiTemplate.Test.csproj'
 
 jobs:
   # Quick validation for PRs
@@ -24,13 +26,13 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
     - name: Restore
-      run: dotnet restore
+      run: dotnet restore ${{ env.SOLUTION_PATH }}
     
     - name: Build
-      run: dotnet build --no-restore --configuration Release
+      run: dotnet build ${{ env.SOLUTION_PATH }} --no-restore --configuration Release
     
     - name: Unit Tests
-      run: dotnet test --no-build --configuration Release --filter "Category!=Integration"
+      run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --filter "Category!=Integration"
     
     - name: Status
       if: success()
