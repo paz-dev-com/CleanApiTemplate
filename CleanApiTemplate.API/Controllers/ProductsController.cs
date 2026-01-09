@@ -78,8 +78,16 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
     {
         _logger.LogInformation("Getting product {ProductId}", id);
 
-        // TODO: Implement GetProductByIdQuery
-        return NotFound(Result<ProductDto>.Failure($"Product with ID {id} not found"));
+        var query = new GetProductByIdQuery { Id = id };
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            _logger.LogWarning("Failed to get product {ProductId}: {Error}", id, result.Error);
+            return NotFound(result);
+        }
+
+        return Ok(result);
     }
 
     /// <summary>
@@ -126,13 +134,34 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<Result>> UpdateProduct(
         Guid id,
-        [FromBody] object command, // TODO: Implement UpdateProductCommand
+        [FromBody] UpdateProductCommand command,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Updating product {ProductId}", id);
 
-        // TODO: Implement UpdateProductCommand
-        return NotFound(Result.Failure($"Product with ID {id} not found"));
+        // Ensure the ID in the route matches the ID in the command
+        if (id != command.Id)
+        {
+            command.Id = id;
+        }
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            _logger.LogWarning("Failed to update product {ProductId}: {Error}", id, result.Error);
+            
+            // Return appropriate status code based on error message
+            if (result.Error?.Contains("not found") == true)
+            {
+                return NotFound(result);
+            }
+            
+            return BadRequest(result);
+        }
+
+        _logger.LogInformation("Product updated successfully: {ProductId}", id);
+        return Ok(result);
     }
 
     /// <summary>
@@ -153,7 +182,16 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
     {
         _logger.LogInformation("Deleting product {ProductId}", id);
 
-        // TODO: Implement DeleteProductCommand
-        return NotFound(Result.Failure($"Product with ID {id} not found"));
+        var command = new DeleteProductCommand { Id = id };
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            _logger.LogWarning("Failed to delete product {ProductId}: {Error}", id, result.Error);
+            return NotFound(result);
+        }
+
+        _logger.LogInformation("Product deleted successfully: {ProductId}", id);
+        return Ok(result);
     }
 }
