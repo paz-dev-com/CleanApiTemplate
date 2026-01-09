@@ -1,0 +1,41 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    types: [opened, synchronize, reopened]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  # Quick validation for PRs
+  quick-validation:
+    name: Quick PR Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Restore
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+    
+    - name: Unit Tests
+      run: dotnet test --no-build --configuration Release --filter "Category!=Integration"
+    
+    - name: Status
+      if: success()
+      run: |
+        echo "## PR Validation Passed" >> $GITHUB_STEP_SUMMARY
+        echo "All checks completed successfully!" >> $GITHUB_STEP_SUMMARY
+        echo "- Build: Success" >> $GITHUB_STEP_SUMMARY
+        echo "- Unit Tests: Passed" >> $GITHUB_STEP_SUMMARY
