@@ -1,0 +1,445 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  SOLUTION_PATH: './CleanApiTemplate.sln'
+  TEST_PROJECT: './CleanApiTemplate.Test/CleanApiTemplate.Test.csproj'
+  
+jobs:
+  # ============================================
+  # Code Quality & Build Validation
+  # ============================================
+  code-quality:
+    name: Code Quality & Build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for better analysis
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Restore Dependencies
+      run: dotnet restore ${{ env.SOLUTION_PATH }}
+    
+    - name: Build Solution
+      run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release --no-restore
+    
+    - name: Code Format Check
+      run: dotnet format ${{ env.SOLUTION_PATH }} --verify-no-changes --verbosity diagnostic
+      continue-on-error: true
+    
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: build-artifacts
+        path: |
+          **/bin/Release/**
+          !**/obj/**
+        retention-days: 7
+
+  # ============================================
+  # Unit Tests (Fast - No Database)
+  # ============================================
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Restore Dependencies
+      run: dotnet restore ${{ env.SOLUTION_PATH }}
+    
+    - name: Build
+      run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release --no-restore
+    
+    - name: Run Unit Tests
+      run: |
+        dotnet test ${{ env.TEST_PROJECT }} \
+          --configuration Release \
+          --no-build \
+          --filter "Category!=Integration" \
+          --logger "trx;LogFileName=unit-test-results.trx" \
+          --logger "console;verbosity=detailed" \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults/Unit
+    
+    - name: Publish Unit Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        files: |
+          TestResults/Unit/**/*.trx
+        check_name: Unit Test Results
+        comment_title: Unit Test Results
+    
+    - name: Upload Unit Test Coverage
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: unit-test-coverage
+        path: TestResults/Unit/**/coverage.cobertura.xml
+        retention-days: 30
+
+  # ============================================
+  # Integration Tests (With SQL Server)
+  # ============================================
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          SA_PASSWORD: 'P@ssw0rd123!'
+          MSSQL_PID: Developer
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssw0rd123! -Q 'SELECT 1' || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --health-start-period 10s
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Restore Dependencies
+      run: dotnet restore ${{ env.SOLUTION_PATH }}
+    
+    - name: Build
+      run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release --no-restore
+    
+    - name: Wait for SQL Server
+      run: |
+        echo "Waiting for SQL Server to be ready..."
+        for i in {1..30}; do
+          if /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'P@ssw0rd123!' -Q "SELECT 1" &> /dev/null; then
+            echo "SQL Server is ready!"
+            exit 0
+          fi
+          echo "Attempt $i: SQL Server not ready yet..."
+          sleep 2
+        done
+        echo "SQL Server failed to start"
+        exit 1
+    
+    - name: Run Integration Tests
+      env:
+        ConnectionStrings__TestConnection: "Server=localhost,1433;Database=CleanApiTemplate_Test;User ID=sa;Password=P@ssw0rd123!;TrustServerCertificate=True;MultipleActiveResultSets=True;Connection Timeout=30;"
+      run: |
+        dotnet test ${{ env.TEST_PROJECT }} \
+          --configuration Release \
+          --no-build \
+          --filter "Category=Integration" \
+          --logger "trx;LogFileName=integration-test-results.trx" \
+          --logger "console;verbosity=detailed" \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults/Integration
+    
+    - name: Publish Integration Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        files: |
+          TestResults/Integration/**/*.trx
+        check_name: Integration Test Results
+        comment_title: Integration Test Results
+    
+    - name: Upload Integration Test Coverage
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: integration-test-coverage
+        path: TestResults/Integration/**/coverage.cobertura.xml
+        retention-days: 30
+
+  # ============================================
+  # Code Coverage Report & Validation
+  # ============================================
+  coverage-report:
+    name: Code Coverage Analysis
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    if: always()
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: Download Unit Test Coverage
+      uses: actions/download-artifact@v4
+      with:
+        name: unit-test-coverage
+        path: ./coverage/unit
+      continue-on-error: true
+    
+    - name: Download Integration Test Coverage
+      uses: actions/download-artifact@v4
+      with:
+        name: integration-test-coverage
+        path: ./coverage/integration
+      continue-on-error: true
+    
+    - name: Generate Coverage Report
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
+      with:
+        reports: 'coverage/**/*.cobertura.xml'
+        targetdir: 'coveragereport'
+        reporttypes: 'HtmlInline_AzurePipelines;Cobertura;MarkdownSummaryGithub;Badges'
+        assemblyfilters: '-xunit*;-*.Tests;-*.Test'
+        filefilters: '-**/Migrations/**;-**/obj/**;-**/bin/**'
+        title: 'Clean API Template - Code Coverage'
+        tag: '${{ github.run_number }}_${{ github.run_id }}'
+    
+    - name: Add Coverage to PR
+      if: github.event_name == 'pull_request'
+      run: |
+        if [ -f coveragereport/SummaryGithub.md ]; then
+          cat coveragereport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+        fi
+    
+    - name: Upload Coverage Reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coveragereport
+        retention-days: 30
+    
+    - name: Coverage Threshold Check
+      run: |
+        # Extract line coverage percentage from Cobertura XML
+        if [ -f coveragereport/Cobertura.xml ]; then
+          coverage=$(grep -oP 'line-rate="\K[0-9.]+' coveragereport/Cobertura.xml | head -1)
+          coverage_percent=$(echo "$coverage * 100" | bc -l | xargs printf "%.2f")
+          echo "Code Coverage: ${coverage_percent}%"
+          echo "COVERAGE_PERCENT=${coverage_percent}" >> $GITHUB_ENV
+          
+          # Set minimum threshold
+          threshold=70.0
+          
+          if (( $(echo "$coverage_percent < $threshold" | bc -l) )); then
+            echo "[FAIL] Coverage ${coverage_percent}% is below threshold ${threshold}%"
+            exit 1
+          else
+            echo "[PASS] Coverage ${coverage_percent}% meets threshold ${threshold}%"
+          fi
+        else
+          echo "[WARN] Coverage report not found, skipping threshold check"
+        fi
+
+  # ============================================
+  # Test Completeness Validation
+  # ============================================
+  test-completeness:
+    name: Test Completeness Check
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Install Analysis Tools
+      run: |
+        dotnet tool install -g dotnet-coverage
+        dotnet tool install -g dotnet-reportgenerator-globaltool
+    
+    - name: Analyze Test Coverage by Class
+      run: |
+        echo "## Test Completeness Analysis" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Find all handler classes
+        echo "### Command Handlers" >> $GITHUB_STEP_SUMMARY
+        handler_count=0
+        test_count=0
+        
+        for handler in $(find CleanApiTemplate.Application -name "*Handler.cs" -not -path "*/obj/*" -not -path "*/bin/*"); do
+          handler_name=$(basename "$handler" .cs)
+          test_file="CleanApiTemplate.Test/Application/Handlers/${handler_name}Tests.cs"
+          
+          if [ -f "$test_file" ]; then
+            test_methods=$(grep -c "public.*void.*Test\|public.*Task.*Test\|\[Fact\]\|\[Theory\]" "$test_file" || echo "0")
+            echo "- [PASS] **${handler_name}**: ${test_methods} tests" >> $GITHUB_STEP_SUMMARY
+            ((test_count++))
+          else
+            echo "- [FAIL] **${handler_name}**: No test file found!" >> $GITHUB_STEP_SUMMARY
+          fi
+          ((handler_count++))
+        done
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Summary**: ${test_count}/${handler_count} handlers have tests" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Find all validator classes
+        echo "### Validators" >> $GITHUB_STEP_SUMMARY
+        validator_count=0
+        validator_test_count=0
+        
+        for validator in $(find CleanApiTemplate.Application -name "*Validator.cs" -not -path "*/obj/*" -not -path "*/bin/*"); do
+          validator_name=$(basename "$validator" .cs)
+          test_file="CleanApiTemplate.Test/Application/Validators/${validator_name}Tests.cs"
+          
+          if [ -f "$test_file" ]; then
+            test_methods=$(grep -c "public.*void.*Test\|public.*Task.*Test\|\[Fact\]\|\[Theory\]" "$test_file" || echo "0")
+            echo "- [PASS] **${validator_name}**: ${test_methods} tests" >> $GITHUB_STEP_SUMMARY
+            ((validator_test_count++))
+          else
+            echo "- [FAIL] **${validator_name}**: No test file found!" >> $GITHUB_STEP_SUMMARY
+          fi
+          ((validator_count++))
+        done
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Summary**: ${validator_test_count}/${validator_count} validators have tests" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Calculate overall completeness
+        total_classes=$((handler_count + validator_count))
+        total_tested=$((test_count + validator_test_count))
+        
+        if [ $total_classes -gt 0 ]; then
+          completeness=$(echo "scale=2; $total_tested * 100 / $total_classes" | bc)
+          echo "### Overall Test Completeness: ${completeness}%" >> $GITHUB_STEP_SUMMARY
+          
+          if (( $(echo "$completeness < 80" | bc -l) )); then
+            echo "[WARN] Test completeness is below 80%" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+        fi
+    
+    - name: Check for Untested Public Methods
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Potential Missing Tests" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Check Application layer for public methods that might need tests
+        missing_tests=false
+        
+        for cs_file in $(find CleanApiTemplate.Application -name "*.cs" -not -path "*/obj/*" -not -path "*/bin/*" -not -name "*Dto.cs" -not -name "*Result.cs"); do
+          # Look for public methods (handlers, validators, etc.)
+          public_methods=$(grep -n "public.*Handle\|public.*Validate" "$cs_file" | wc -l)
+          
+          if [ "$public_methods" -gt 0 ]; then
+            class_name=$(basename "$cs_file" .cs)
+            test_file="CleanApiTemplate.Test/**/${class_name}Tests.cs"
+            
+            if ! find CleanApiTemplate.Test -name "${class_name}Tests.cs" | grep -q .; then
+              echo "- [WARN] **${class_name}** has ${public_methods} public method(s) but no test file" >> $GITHUB_STEP_SUMMARY
+              missing_tests=true
+            fi
+          fi
+        done
+        
+        if [ "$missing_tests" = false ]; then
+          echo "[PASS] All application classes with public methods have corresponding test files" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  # ============================================
+  # Security Scan
+  # ============================================
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Run Security Scan
+      run: |
+        dotnet list package --vulnerable --include-transitive 2>&1 | tee security-scan.txt
+        
+        if grep -q "has the following vulnerable packages" security-scan.txt; then
+          echo "[FAIL] Vulnerable packages found!"
+          cat security-scan.txt
+          exit 1
+        else
+          echo "[PASS] No vulnerable packages found"
+        fi
+    
+    - name: Upload Security Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-scan-report
+        path: security-scan.txt
+        retention-days: 30
+
+  # ============================================
+  # Final Status Check
+  # ============================================
+  pipeline-status:
+    name: Pipeline Status
+    runs-on: ubuntu-latest
+    needs: [code-quality, unit-tests, integration-tests, coverage-report, test-completeness, security-scan]
+    if: always()
+    
+    steps:
+    - name: Check Pipeline Status
+      run: |
+        echo "## Pipeline Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Code Quality & Build | ${{ needs.code-quality.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Unit Tests | ${{ needs.unit-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Integration Tests | ${{ needs.integration-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Coverage Report | ${{ needs.coverage-report.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Completeness | ${{ needs.test-completeness.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Security Scan | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ needs.code-quality.result }}" != "success" ] || \
+           [ "${{ needs.unit-tests.result }}" != "success" ] || \
+           [ "${{ needs.integration-tests.result }}" != "success" ]; then
+          echo "[FAIL] Pipeline failed - check individual job results" >> $GITHUB_STEP_SUMMARY
+          exit 1
+        else
+          echo "[PASS] All critical jobs passed successfully!" >> $GITHUB_STEP_SUMMARY
+        fi
