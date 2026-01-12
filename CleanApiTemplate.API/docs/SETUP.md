@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [SQL Server](https://www.microsoft.com/sql-server/sql-server-downloads) or SQL Server LocalDB
 - [Visual Studio 2022](https://visualstudio.microsoft.com/) or [VS Code](https://code.visualstudio.com/)
 - (Optional) [Azure subscription](https://azure.microsoft.com/) for KeyVault
@@ -375,7 +375,7 @@ If packages won't restore:
 
 1. Ensure connection string is correct
 2. Run migrations: `dotnet ef database update`
-3. Check EF Core version compatibility (this template uses 8.0.11)
+3. Check EF Core version compatibility (this template uses 10.0.0)
 4. Enable logging: Add `optionsBuilder.LogTo(Console.WriteLine)` in DbContext
 5. Clear EF Core compiled models: Delete `obj` folders
 

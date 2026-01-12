@@ -37,7 +37,7 @@ public class IntegrationTestDbFactory : IAsyncLifetime
                 .Build();
 
             _connectionString = configuration.GetConnectionString("TestConnection")
-                ?? "Server=tcp:localhost,1433;Initial Catalog=CleanApiTemplate_Test;Persist Security Info=False;User ID=sa;Password=P@ssw0rd123!;MultipleActiveResultSets=True;Connection Timeout=30;TrustServerCertificate=True;";
+                ?? "Server=localhost;Database=CleanApiTemplate_Test;User ID=sa;Password=P@ssw0rd;TrustServerCertificate=True;MultipleActiveResultSets=True;Connection Timeout=30;Encrypt=False;";
         }
     }
 
@@ -53,20 +53,29 @@ public class IntegrationTestDbFactory : IAsyncLifetime
 
         _dbContext = new ApplicationDbContext(options);
 
-        // Ensure database is created and migrations are applied
-        await _dbContext.Database.EnsureDeletedAsync();
-        await _dbContext.Database.MigrateAsync();
-
-        // Initialize Respawner for database cleanup
-        _dbConnection = new SqlConnection(_connectionString);
-        await _dbConnection.OpenAsync();
-
-        _respawner = await Respawner.CreateAsync(_dbConnection, new RespawnerOptions
+        try
         {
-            DbAdapter = DbAdapter.SqlServer,
-            TablesToIgnore = ["__EFMigrationsHistory"],
-            WithReseed = true
-        });
+            // Ensure database is created and migrations are applied
+            await _dbContext.Database.EnsureDeletedAsync();
+            await _dbContext.Database.MigrateAsync();
+
+            // Initialize Respawner for database cleanup
+            _dbConnection = new SqlConnection(_connectionString);
+            await _dbConnection.OpenAsync();
+
+            _respawner = await Respawner.CreateAsync(_dbConnection, new RespawnerOptions
+            {
+                DbAdapter = DbAdapter.SqlServer,
+                TablesToIgnore = ["__EFMigrationsHistory"],
+                WithReseed = true
+            });
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                $"Failed to initialize test database. Connection string: {_connectionString}. " +
+                $"Make sure SQL Server is running and accessible. Error: {ex.Message}", ex);
+        }
     }
 
     /// <summary>

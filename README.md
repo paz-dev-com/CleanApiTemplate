@@ -1,9 +1,9 @@
-# Clean API Template - .NET 8
+# Clean API Template - .NET 10
 
-[![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/8.0)
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/10.0)
 [![Clean Architecture](https://img.shields.io/badge/Architecture-Clean-blue)](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 
-A production-ready, enterprise-grade Clean Architecture API template demonstrating modern .NET 8 development practices, CQRS patterns, security implementation, database optimization, and strict adherence to Clean Architecture principles.
+A production-ready, enterprise-grade Clean Architecture API template demonstrating modern .NET 10 development practices, CQRS patterns, security implementation, database optimization, and strict adherence to Clean Architecture principles.
 
 This template **strictly adheres** to Clean Architecture principles:
 - **Pure Domain Layer (Core)** - Zero dependencies, only domain entities and interfaces
@@ -112,7 +112,7 @@ CleanApiTemplate/
 
 ## ➡️ Core Concepts Demonstrated
 
-### 1. Modern .NET 8 Features
+### 1. Modern .NET 10 Features
 
 #### Dependency Injection (DI)
 ```csharp
@@ -429,6 +429,28 @@ public class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
     // Skips transactions for queries (read-only operations)
 }
 ```
+#### Database Seeding with Interface Pattern
+
+**Runtime seeding with random GUIDs per environment:**
+
+```csharp
+// Data/Seeders/ISeeder.cs public interface ISeeder<in TContext> where TContext : DbContext { Task SeedAsync(TContext context, CancellationToken cancellationToken = default); }
+// Example: RoleSeeder public class RoleSeeder : ISeeder<ApplicationDbContext> { public async Task SeedAsync(ApplicationDbContext context, CancellationToken cancellationToken) { if (await context.Roles.AnyAsync(cancellationToken)) return;
+    var roles = new List<Role>
+    {
+        new() { Id = Guid.NewGuid(), Name = "Admin", ... },
+        new() { Id = Guid.NewGuid(), Name = "User", ... }
+    };
+    
+    await context.Roles.AddRangeAsync(roles, cancellationToken);
+    await context.SaveChangesAsync(cancellationToken);
+}
+}
+```
+
+**Adding a new seeder:** Create class implementing `ISeeder<ApplicationDbContext>` → Register: `services.AddScoped<ISeeder<ApplicationDbContext>, MySeeder>();`
+
+✅ No seed data in migrations • ✅ Random GUIDs • ✅ Idempotent • ✅ Auto-discovery
 
 ### 6. System Interoperability
 
@@ -521,7 +543,7 @@ public class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
 ## ➡️ Getting Started
 
 ### Prerequisites
-- .NET 8 SDK
+- .NET 10 SDK
 - SQL Server or SQL Server LocalDB
 - Visual Studio 2022 or VS Code
 - (Optional) Azure subscription for KeyVault
@@ -596,9 +618,9 @@ public async Task PerformanceBehavior_LogsWarning_WhenRequestTakesLongerThan500m
 ## ➡️ NuGet Packages Used
 
 ### API Layer
-- `Microsoft.AspNetCore.Authentication.JwtBearer` - JWT authentication
-- `Serilog.AspNetCore` - Structured logging
-- `Swashbuckle.AspNetCore` - Swagger/OpenAPI
+- `Microsoft.AspNetCore.Authentication.JwtBearer` (10.0.0) - JWT authentication
+- `Serilog.AspNetCore` (10.0.0) - Structured logging
+- `Swashbuckle.AspNetCore` (7.2.0) - Swagger/OpenAPI
 - `MediatR` - CQRS pattern
 
 ### Core Layer (Domain) - ZERO Dependencies ✅
@@ -617,17 +639,17 @@ public async Task PerformanceBehavior_LogsWarning_WhenRequestTakesLongerThan500m
 ### Infrastructure Layer (External Services) ✅
 - `Azure.Security.KeyVault.Secrets` (4.8.0) - Secret management
 - `Azure.Identity` (1.17.1) - Azure authentication
-- `System.IdentityModel.Tokens.Jwt` (8.0.2) - JWT token generation
+- `System.IdentityModel.Tokens.Jwt` (8.3.1) - JWT token generation
 - `System.Management.Automation` (7.4.6) - PowerShell execution
-- `System.ServiceProcess.ServiceController` (9.0.0) - Windows service management
-- `Microsoft.EntityFrameworkCore` (8.0.11) - For health checks only
-- `Microsoft.Extensions.Configuration.Abstractions` (8.0.0)
-- `Microsoft.Extensions.DependencyInjection.Abstractions` (8.0.2)
+- `System.ServiceProcess.ServiceController` (10.0.0) - Windows service management
+- `Microsoft.EntityFrameworkCore` (10.0.0) - For health checks only
+- `Microsoft.Extensions.Configuration.Abstractions` (10.0.0)
+- `Microsoft.Extensions.DependencyInjection.Abstractions` (10.0.1)
 
 ### Data Layer (Persistence) ✅
-- `Microsoft.EntityFrameworkCore.SqlServer` - SQL Server provider
-- `Microsoft.EntityFrameworkCore.Tools` - Migrations
-- `Dapper` - High-performance queries
+- `Microsoft.EntityFrameworkCore.SqlServer` (10.0.0) - SQL Server provider
+- `Microsoft.EntityFrameworkCore.Tools` (10.0.0) - Migrations
+- `Dapper` (2.1.66) - High-performance queries
 
 ## ➡️ Project Structure Best Practices
 
