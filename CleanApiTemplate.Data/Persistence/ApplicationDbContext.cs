@@ -51,48 +51,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .HasIndex(a => new { a.EntityName, a.EntityId, a.PerformedAt })
             .HasDatabaseName("IX_AuditLogs_Entity_Date");
 
-        // Seed default roles
-        SeedRoles(modelBuilder);
-    }
-
-    /// <summary>
-    /// Seed default roles
-    /// </summary>
-    private static void SeedRoles(ModelBuilder modelBuilder)
-    {
-        var adminRoleId = Guid.NewGuid();
-        var userRoleId = Guid.NewGuid();
-        var managerRoleId = Guid.NewGuid();
-
-        modelBuilder.Entity<Role>().HasData(
-            new Role
-            {
-                Id = adminRoleId,
-                Name = "Admin",
-                NormalizedName = "ADMIN",
-                Description = "Administrator with full access",
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = "System"
-            },
-            new Role
-            {
-                Id = userRoleId,
-                Name = "User",
-                NormalizedName = "USER",
-                Description = "Regular user with limited access",
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = "System"
-            },
-            new Role
-            {
-                Id = managerRoleId,
-                Name = "Manager",
-                NormalizedName = "MANAGER",
-                Description = "Manager with elevated access",
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = "System"
-            }
-        );
+        // Roles will be seeded at application startup instead of using HasData
+        // This allows for dynamic GUID generation per environment
     }
 
     /// <summary>
