@@ -1,13 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
-
-#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
 namespace CleanApiTemplate.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -184,16 +183,6 @@ namespace CleanApiTemplate.Data.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.InsertData(
-                table: "Roles",
-                columns: new[] { "Id", "CreatedAt", "CreatedBy", "DeletedAt", "DeletedBy", "Description", "IsDeleted", "Name", "NormalizedName", "UpdatedAt", "UpdatedBy" },
-                values: new object[,]
-                {
-                    { new Guid("4eabc6dc-46a0-4d51-ae29-5abf467f2fab"), new DateTime(2026, 1, 5, 13, 9, 34, 314, DateTimeKind.Utc).AddTicks(6225), "System", null, null, "Administrator with full access", false, "Admin", "ADMIN", null, null },
-                    { new Guid("99f094ca-c26c-41e3-a3cc-03b0229debf4"), new DateTime(2026, 1, 5, 13, 9, 34, 314, DateTimeKind.Utc).AddTicks(6227), "System", null, null, "Regular user with limited access", false, "User", "USER", null, null },
-                    { new Guid("cb8765b7-4988-49fd-a6df-2618015ce7a7"), new DateTime(2026, 1, 5, 13, 9, 34, 314, DateTimeKind.Utc).AddTicks(6228), "System", null, null, "Manager with elevated access", false, "Manager", "MANAGER", null, null }
                 });
 
             migrationBuilder.CreateIndex(

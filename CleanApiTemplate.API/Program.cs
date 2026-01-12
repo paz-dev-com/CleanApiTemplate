@@ -3,6 +3,7 @@ using CleanApiTemplate.API.Services;
 using CleanApiTemplate.Application;
 using CleanApiTemplate.Core.Interfaces;
 using CleanApiTemplate.Data;
+using CleanApiTemplate.Data.Seeders;
 using CleanApiTemplate.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -74,7 +75,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Clean API Template",
         Version = "v1",
-        Description = "A Clean Architecture API template with .NET 8 demonstrating modern patterns, security, and best practices",
+        Description = "A Clean Architecture API template with .NET 10 demonstrating modern patterns, security, and best practices",
     });
 
     // Add JWT authentication to Swagger
@@ -128,10 +129,16 @@ using (var scope = app.Services.CreateScope())
         await dbContext.Database.MigrateAsync();
 
         Log.Information("Database ready");
+
+        // Seed default data (roles with random GUIDs per environment)
+        var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+        await seeder.SeedAsync();
+
+        Log.Information("Database seeding completed");
     }
     catch (Exception ex)
     {
-        Log.Error(ex, "An error occurred while migrating the database");
+        Log.Error(ex, "An error occurred while migrating or seeding the database");
         throw;
     }
 }

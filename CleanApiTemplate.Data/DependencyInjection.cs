@@ -1,6 +1,7 @@
 using CleanApiTemplate.Core.Interfaces;
 using CleanApiTemplate.Data.Persistence;
 using CleanApiTemplate.Data.Repositories;
+using CleanApiTemplate.Data.Seeders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,8 +23,18 @@ public static class DependencyInjection
         // Register repositories and Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // Register Health Check Service (depends on DbContext)
-        // HealthCheckService is now in Infrastructure layer, registered there
+        // Register all seeders
+        services.AddScoped<ISeeder<ApplicationDbContext>, RoleSeeder>();
+        
+        // Example: Uncomment to seed categories
+        // services.AddScoped<ISeeder<ApplicationDbContext>, CategorySeeder>();
+        
+        // Add more seeders here as needed:
+        // services.AddScoped<ISeeder<ApplicationDbContext>, AdminUserSeeder>();
+        // services.AddScoped<ISeeder<ApplicationDbContext>, ProductSeeder>();
+
+        // Register Database Seeder orchestrator
+        services.AddScoped<DatabaseSeeder>();
 
         return services;
     }

@@ -17,7 +17,7 @@ namespace CleanApiTemplate.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.11")
+                .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -288,38 +288,6 @@ namespace CleanApiTemplate.Data.Migrations
                         .HasDatabaseName("IX_Roles_NormalizedName");
 
                     b.ToTable("Roles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("4eabc6dc-46a0-4d51-ae29-5abf467f2fab"),
-                            CreatedAt = new DateTime(2026, 1, 5, 13, 9, 34, 314, DateTimeKind.Utc).AddTicks(6225),
-                            CreatedBy = "System",
-                            Description = "Administrator with full access",
-                            IsDeleted = false,
-                            Name = "Admin",
-                            NormalizedName = "ADMIN"
-                        },
-                        new
-                        {
-                            Id = new Guid("99f094ca-c26c-41e3-a3cc-03b0229debf4"),
-                            CreatedAt = new DateTime(2026, 1, 5, 13, 9, 34, 314, DateTimeKind.Utc).AddTicks(6227),
-                            CreatedBy = "System",
-                            Description = "Regular user with limited access",
-                            IsDeleted = false,
-                            Name = "User",
-                            NormalizedName = "USER"
-                        },
-                        new
-                        {
-                            Id = new Guid("cb8765b7-4988-49fd-a6df-2618015ce7a7"),
-                            CreatedAt = new DateTime(2026, 1, 5, 13, 9, 34, 314, DateTimeKind.Utc).AddTicks(6228),
-                            CreatedBy = "System",
-                            Description = "Manager with elevated access",
-                            IsDeleted = false,
-                            Name = "Manager",
-                            NormalizedName = "MANAGER"
-                        });
                 });
 
             modelBuilder.Entity("CleanApiTemplate.Core.Entities.User", b =>
