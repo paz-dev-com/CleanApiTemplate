@@ -39,7 +39,7 @@ public class UpdateProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_ValidCommand_ShouldUpdateProductSuccessfully()
+    public async Task Handle_ValidCommand_ShouldUpdateProductSuccessfullyAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -106,7 +106,7 @@ public class UpdateProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_ProductNotFound_ShouldReturnFailure()
+    public async Task Handle_ProductNotFound_ShouldReturnFailureAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -137,7 +137,7 @@ public class UpdateProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_DeletedProduct_ShouldReturnFailure()
+    public async Task Handle_DeletedProduct_ShouldReturnFailureAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -178,7 +178,7 @@ public class UpdateProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_DuplicateSku_ShouldReturnFailure()
+    public async Task Handle_DuplicateSku_ShouldReturnFailureAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -222,7 +222,7 @@ public class UpdateProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_SkuNotChanged_ShouldNotCheckDuplicates()
+    public async Task Handle_SkuNotChanged_ShouldNotCheckDuplicatesAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -270,7 +270,7 @@ public class UpdateProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_CategoryNotFound_ShouldReturnFailure()
+    public async Task Handle_CategoryNotFound_ShouldReturnFailureAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -319,7 +319,7 @@ public class UpdateProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_NullUsername_ShouldUseSystemAsUpdatedBy()
+    public async Task Handle_NullUsername_ShouldUseSystemAsUpdatedByAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -362,7 +362,7 @@ public class UpdateProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_ValidCommand_ShouldSetUpdatedAtTimestamp()
+    public async Task Handle_ValidCommand_ShouldSetUpdatedAtTimestampAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -408,7 +408,7 @@ public class UpdateProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_CancellationRequested_ShouldPropagateCancellation()
+    public async Task Handle_CancellationRequested_ShouldPropagateCancellationAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -422,7 +422,7 @@ public class UpdateProductCommandHandlerTests : TestBase
         };
 
         var cancellationTokenSource = new CancellationTokenSource();
-        cancellationTokenSource.Cancel();
+        await cancellationTokenSource.CancelAsync();
 
         _productRepositoryMock
             .Setup(x => x.GetByIdAsync(productId, It.IsAny<CancellationToken>()))

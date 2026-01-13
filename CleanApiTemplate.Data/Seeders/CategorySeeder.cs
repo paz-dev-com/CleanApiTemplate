@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using CleanApiTemplate.Core.Entities;
 using CleanApiTemplate.Data.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -18,11 +19,11 @@ public class CategorySeeder(ILogger<CategorySeeder> logger) : ISeeder<Applicatio
         // Check if categories already exist
         if (await context.Categories.AnyAsync(cancellationToken))
         {
-            _logger.LogInformation("Categories already exist, skipping seed");
+            _logger.LogSeederSkip("categories");
             return;
         }
 
-        _logger.LogInformation("Seeding default categories...");
+        _logger.LogSeederStart("categories");
 
         var categories = new List<Category>
         {
@@ -58,6 +59,6 @@ public class CategorySeeder(ILogger<CategorySeeder> logger) : ISeeder<Applicatio
         await context.Categories.AddRangeAsync(categories, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Successfully seeded {Count} categories", categories.Count);
+        _logger.LogSeederComplete("categories", categories.Count);
     }
 }

@@ -62,13 +62,8 @@ public class GetProductByIdQueryHandlerTests : TestBase
 
         var query = new GetProductByIdQuery { Id = productId };
 
-        _productRepositoryMock
-            .Setup(x => x.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { product });
-
-        _categoryRepositoryMock
-            .Setup(x => x.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Category, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { category });
+        SetupProductRepositoryMock(product);
+        SetupCategoryRepositoryMock(category);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -96,9 +91,7 @@ public class GetProductByIdQueryHandlerTests : TestBase
         var productId = Guid.NewGuid();
         var query = new GetProductByIdQuery { Id = productId };
 
-        _productRepositoryMock
-            .Setup(x => x.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<Product>());
+        SetupProductRepositoryMock();
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -116,23 +109,9 @@ public class GetProductByIdQueryHandlerTests : TestBase
     {
         // Arrange
         var productId = Guid.NewGuid();
-        var product = new Product
-        {
-            Id = productId,
-            Name = "Deleted Product",
-            Sku = "DEL-SKU",
-            Price = 50m,
-            CategoryId = Guid.NewGuid(),
-            IsDeleted = true,
-            DeletedAt = DateTime.UtcNow,
-            DeletedBy = "admin"
-        };
-
         var query = new GetProductByIdQuery { Id = productId };
 
-        _productRepositoryMock
-            .Setup(x => x.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<Product>()); // Soft-deleted products are filtered out
+        SetupProductRepositoryMock();
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -161,13 +140,8 @@ public class GetProductByIdQueryHandlerTests : TestBase
 
         var query = new GetProductByIdQuery { Id = productId };
 
-        _productRepositoryMock
-            .Setup(x => x.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { product });
-
-        _categoryRepositoryMock
-            .Setup(x => x.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Category, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<Category>());
+        SetupProductRepositoryMock(product);
+        SetupCategoryRepositoryMock();
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -196,9 +170,7 @@ public class GetProductByIdQueryHandlerTests : TestBase
 
         var query = new GetProductByIdQuery { Id = productId };
 
-        _productRepositoryMock
-            .Setup(x => x.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { product });
+        SetupProductRepositoryMock(product);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -232,9 +204,7 @@ public class GetProductByIdQueryHandlerTests : TestBase
 
         var query = new GetProductByIdQuery { Id = productId };
 
-        _productRepositoryMock
-            .Setup(x => x.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { product });
+        SetupProductRepositoryMock(product);
 
         // Act
         await _handler.Handle(query, CancellationToken.None);
@@ -253,7 +223,7 @@ public class GetProductByIdQueryHandlerTests : TestBase
         var productId = Guid.NewGuid();
         var query = new GetProductByIdQuery { Id = productId };
         var cancellationTokenSource = new CancellationTokenSource();
-        cancellationTokenSource.Cancel();
+        await cancellationTokenSource.CancelAsync();
 
         _productRepositoryMock
             .Setup(x => x.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
@@ -262,5 +232,21 @@ public class GetProductByIdQueryHandlerTests : TestBase
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(async () =>
             await _handler.Handle(query, cancellationTokenSource.Token));
+    }
+
+    private void SetupProductRepositoryMock(Product? product = null)
+    {
+        var products = product != null ? new[] { product } : Array.Empty<Product>();
+        _productRepositoryMock
+            .Setup(x => x.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(products);
+    }
+
+    private void SetupCategoryRepositoryMock(Category? category = null)
+    {
+        var categories = category != null ? new[] { category } : Array.Empty<Category>();
+        _categoryRepositoryMock
+            .Setup(x => x.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Category, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(categories);
     }
 }

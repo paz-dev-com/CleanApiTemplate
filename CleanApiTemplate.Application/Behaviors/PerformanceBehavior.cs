@@ -10,17 +10,11 @@ namespace CleanApiTemplate.Application.Behaviors;
 /// </summary>
 /// <typeparam name="TRequest">Request type</typeparam>
 /// <typeparam name="TResponse">Response type</typeparam>
-public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+public class PerformanceBehavior<TRequest, TResponse>(ILogger<PerformanceBehavior<TRequest, TResponse>> logger) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
-    private readonly ILogger<PerformanceBehavior<TRequest, TResponse>> _logger;
-    private readonly Stopwatch _timer;
-
-    public PerformanceBehavior(ILogger<PerformanceBehavior<TRequest, TResponse>> logger)
-    {
-        _logger = logger;
-        _timer = new Stopwatch();
-    }
+    private readonly ILogger<PerformanceBehavior<TRequest, TResponse>> _logger = logger;
+    private readonly Stopwatch _timer = new();
 
     public async Task<TResponse> Handle(
         TRequest request,
@@ -29,16 +23,16 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
     {
         _timer.Start();
 
-        var response = await next();
+        TResponse? response = await next(cancellationToken);
 
         _timer.Stop();
 
-        var elapsedMilliseconds = _timer.ElapsedMilliseconds;
+        long elapsedMilliseconds = _timer.ElapsedMilliseconds;
 
         // Log warning if request takes longer than 500ms
         if (elapsedMilliseconds > 500)
         {
-            var requestName = typeof(TRequest).Name;
+            string requestName = typeof(TRequest).Name;
 
             _logger.LogWarning(
                 "Long Running Request: {RequestName} ({ElapsedMilliseconds} milliseconds) {@Request}",

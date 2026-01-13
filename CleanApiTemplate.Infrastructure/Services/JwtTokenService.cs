@@ -26,7 +26,7 @@ public class JwtTokenService : IJwtTokenService
             ?? throw new InvalidOperationException("JWT SecretKey is not configured");
         _issuer = _configuration["JwtSettings:Issuer"] ?? "CleanApiTemplate";
         _audience = _configuration["JwtSettings:Audience"] ?? "CleanApiTemplateUsers";
-        _expirationMinutes = int.Parse(_configuration["JwtSettings:ExpirationInMinutes"] ?? "60");
+        _expirationMinutes = int.Parse(_configuration["JwtSettings:ExpirationInMinutes"] ?? "60", System.Globalization.CultureInfo.InvariantCulture);
     }
 
     /// <summary>
@@ -46,7 +46,7 @@ public class JwtTokenService : IJwtTokenService
             new Claim(ClaimTypes.Email, email),
             new Claim(JwtRegisteredClaimNames.Sub, userId),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString())
+            new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture))
         };
 
         // Add roles as claims

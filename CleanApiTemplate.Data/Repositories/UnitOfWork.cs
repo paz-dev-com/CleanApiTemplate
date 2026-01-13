@@ -11,11 +11,12 @@ namespace CleanApiTemplate.Data.Repositories;
 /// Unit of Work implementation
 /// Demonstrates transaction management and coordination of multiple repositories
 /// </summary>
-public class UnitOfWork : IUnitOfWork
+public sealed class UnitOfWork : IUnitOfWork, IDisposable
 {
     private readonly ApplicationDbContext _context;
     private readonly Dictionary<Type, object> _repositories;
     private IDbContextTransaction? _transaction;
+    private bool _disposed;
 
     public UnitOfWork(ApplicationDbContext context)
     {
@@ -27,20 +28,21 @@ public class UnitOfWork : IUnitOfWork
     {
         var type = typeof(T);
 
-        if (!_repositories.ContainsKey(type))
+        if (_repositories.TryGetValue(type, out var existingRepository))
         {
-            var repositoryType = typeof(Repository<>).MakeGenericType(type);
-            var repositoryInstance = Activator.CreateInstance(repositoryType, _context);
-
-            if (repositoryInstance == null)
-            {
-                throw new InvalidOperationException($"Could not create repository for type {type.Name}");
-            }
-
-            _repositories[type] = repositoryInstance;
+            return (IRepository<T>)existingRepository;
         }
 
-        return (IRepository<T>)_repositories[type];
+        var repositoryType = typeof(Repository<>).MakeGenericType(type);
+        var repositoryInstance = Activator.CreateInstance(repositoryType, _context);
+
+        if (repositoryInstance == null)
+        {
+            throw new InvalidOperationException($"Could not create repository for type {type.Name}");
+        }
+
+        _repositories[type] = repositoryInstance;
+        return (IRepository<T>)repositoryInstance;
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -122,8 +124,21 @@ public class UnitOfWork : IUnitOfWork
 
     public void Dispose()
     {
-        _transaction?.Dispose();
-        _context.Dispose();
+        Dispose(true);
         GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                _transaction?.Dispose();
+                _context.Dispose();
+            }
+
+            _disposed = true;
+        }
     }
 }
