@@ -25,10 +25,14 @@ public static class DependencyInjection
 
         // Register all seeders
         services.AddScoped<ISeeder<ApplicationDbContext>, RoleSeeder>();
-        
+
+#if DEBUG
+        services.AddScoped<ISeeder<ApplicationDbContext>, UserSeeder>();
+#endif
+
         // Example: Uncomment to seed categories
         // services.AddScoped<ISeeder<ApplicationDbContext>, CategorySeeder>();
-        
+
         // Add more seeders here as needed:
         // services.AddScoped<ISeeder<ApplicationDbContext>, AdminUserSeeder>();
         // services.AddScoped<ISeeder<ApplicationDbContext>, ProductSeeder>();

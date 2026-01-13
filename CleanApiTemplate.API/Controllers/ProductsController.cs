@@ -1,6 +1,8 @@
 using CleanApiTemplate.Application.Common;
 using CleanApiTemplate.Application.Features.Products.Commands;
 using CleanApiTemplate.Application.Features.Products.Queries;
+using CleanApiTemplate.Core.Entities;
+using CleanApiTemplate.Data.Seeders.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -30,6 +32,7 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Paginated list of products</returns>
     [HttpGet]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(Result<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Result<PaginatedResult<ProductDto>>>> GetProducts(
@@ -70,6 +73,7 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Product details</returns>
     [HttpGet("{id}")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(Result<ProductDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Result<ProductDto>>> GetProduct(
@@ -97,10 +101,11 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Created product ID</returns>
     [HttpPost]
-    [Authorize] // Requires authentication
+    [Authorize(Roles = $"{UserRolesList.Admin}")]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<Result<Guid>>> CreateProduct(
         [FromBody] CreateProductCommand command,
         CancellationToken cancellationToken = default)
@@ -127,11 +132,12 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Success result</returns>
     [HttpPut("{id}")]
-    [Authorize]
+    [Authorize(Roles = $"{UserRolesList.Admin}")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<Result>> UpdateProduct(
         Guid id,
         [FromBody] UpdateProductCommand command,
@@ -171,7 +177,7 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Success result</returns>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")] // Requires Admin role
+    [Authorize(Roles = $"{UserRolesList.Admin}")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

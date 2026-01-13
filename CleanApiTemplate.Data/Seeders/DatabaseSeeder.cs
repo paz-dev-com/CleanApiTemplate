@@ -7,21 +7,14 @@ namespace CleanApiTemplate.Data.Seeders;
 /// Main database seeder that orchestrates all seeders
 /// Discovers and executes all registered ISeeder implementations
 /// </summary>
-public class DatabaseSeeder
+public class DatabaseSeeder(
+    ApplicationDbContext context,
+    IEnumerable<ISeeder<ApplicationDbContext>> seeders,
+    ILogger<DatabaseSeeder> logger)
 {
-    private readonly ApplicationDbContext _context;
-    private readonly IEnumerable<ISeeder<ApplicationDbContext>> _seeders;
-    private readonly ILogger<DatabaseSeeder> _logger;
-
-    public DatabaseSeeder(
-        ApplicationDbContext context,
-        IEnumerable<ISeeder<ApplicationDbContext>> seeders,
-        ILogger<DatabaseSeeder> logger)
-    {
-        _context = context;
-        _seeders = seeders;
-        _logger = logger;
-    }
+    private readonly ApplicationDbContext _context = context;
+    private readonly IEnumerable<ISeeder<ApplicationDbContext>> _seeders = seeders;
+    private readonly ILogger<DatabaseSeeder> _logger = logger;
 
     /// <summary>
     /// Execute all registered seeders
