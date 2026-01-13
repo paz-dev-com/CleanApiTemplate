@@ -7,11 +7,18 @@ namespace CleanApiTemplate.Test.Common;
 /// </summary>
 public abstract class TestBase
 {
-    protected readonly IFixture Fixture;
+    protected IFixture Fixture { get; }
 
     protected TestBase()
     {
         Fixture = new Fixture();
+    }
+
+    /// <summary>
+    /// Call this method in your test class constructor to customize AutoFixture configuration.
+    /// </summary>
+    protected void InitializeFixture()
+    {
         ConfigureFixture();
     }
 

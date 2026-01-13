@@ -14,12 +14,15 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog for structured logging
+// Note: Serilog internally handles culture-specific formatting
+#pragma warning disable CA1305 // Serilog handles IFormatProvider internally
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
     .WriteTo.Console()
     .WriteTo.File("logs/api-.txt", rollingInterval: RollingInterval.Day)
     .CreateLogger();
+#pragma warning restore CA1305
 
 builder.Host.UseSerilog();
 
@@ -213,7 +216,7 @@ try
 {
     Log.Information("Starting Clean API Template application");
     Log.Information("Environment: {Environment}", app.Environment.EnvironmentName);
-    app.Run();
+    await app.RunAsync();
 }
 catch (Exception ex)
 {
@@ -221,5 +224,5 @@ catch (Exception ex)
 }
 finally
 {
-    Log.CloseAndFlush();
+    await Log.CloseAndFlushAsync();
 }

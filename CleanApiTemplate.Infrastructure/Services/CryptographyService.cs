@@ -85,9 +85,13 @@ public class CryptographyService : ICryptographyService
         // Generate a salt
         byte[] salt = RandomNumberGenerator.GetBytes(16);
 
-        // Hash the password with PBKDF2
-        var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 10000, HashAlgorithmName.SHA256);
-        byte[] hash = pbkdf2.GetBytes(32);
+        // Hash the password with PBKDF2 using the static method (SYSLIB0060 fix)
+        byte[] hash = Rfc2898DeriveBytes.Pbkdf2(
+            password,
+            salt,
+            10000,
+            HashAlgorithmName.SHA256,
+            32);
 
         // Combine salt and hash
         byte[] hashBytes = new byte[48];
@@ -116,9 +120,13 @@ public class CryptographyService : ICryptographyService
             byte[] salt = new byte[16];
             Array.Copy(hashBytes, 0, salt, 0, 16);
 
-            // Compute the hash on the password
-            var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 10000, HashAlgorithmName.SHA256);
-            byte[] hashToCompare = pbkdf2.GetBytes(32);
+            // Compute the hash on the password using the static method (SYSLIB0060 fix)
+            byte[] hashToCompare = Rfc2898DeriveBytes.Pbkdf2(
+                password,
+                salt,
+                10000,
+                HashAlgorithmName.SHA256,
+                32);
 
             // Compare the results
             for (int i = 0; i < 32; i++)
@@ -155,11 +163,9 @@ public class CryptographyService : ICryptographyService
         {
             throw new ArgumentNullException(nameof(input));
         }
+        byte[] bytes = Encoding.UTF8.GetBytes(input);
+        byte[] hashBytes = SHA256.HashData(bytes);
 
-        using var sha256 = SHA256.Create();
-        var bytes = Encoding.UTF8.GetBytes(input);
-        var hashBytes = sha256.ComputeHash(bytes);
-
-        return Convert.ToHexString(hashBytes).ToLower();
+        return Convert.ToHexString(hashBytes).ToLower(System.Globalization.CultureInfo.CurrentCulture);
     }
 }

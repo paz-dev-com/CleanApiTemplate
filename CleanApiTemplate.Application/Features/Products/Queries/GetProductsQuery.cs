@@ -31,5 +31,5 @@ public class GetProductsQuery : QueryBase<Result<PaginatedResult<ProductDto>>>
     /// <summary>
     /// Include inactive products
     /// </summary>
-    public bool IncludeInactive { get; set; } = false;
+    public bool IncludeInactive { get; set; }
 }

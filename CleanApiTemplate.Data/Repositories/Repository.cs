@@ -12,8 +12,7 @@ namespace CleanApiTemplate.Data.Repositories;
 /// <typeparam name="T">Entity type</typeparam>
 public class Repository<T>(ApplicationDbContext context) : IRepository<T> where T : class
 {
-    protected readonly ApplicationDbContext _context = context;
-    protected readonly DbSet<T> _dbSet = context.Set<T>();
+    private readonly DbSet<T> _dbSet = context.Set<T>();
 
     public virtual async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {

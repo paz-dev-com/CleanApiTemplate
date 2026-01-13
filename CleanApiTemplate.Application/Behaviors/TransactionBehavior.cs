@@ -10,36 +10,28 @@ namespace CleanApiTemplate.Application.Behaviors;
 /// </summary>
 /// <typeparam name="TRequest">Request type</typeparam>
 /// <typeparam name="TResponse">Response type</typeparam>
-public class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+public class TransactionBehavior<TRequest, TResponse>(
+    IUnitOfWork unitOfWork,
+    ILogger<TransactionBehavior<TRequest, TResponse>> logger) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<TransactionBehavior<TRequest, TResponse>> _logger;
-
-    public TransactionBehavior(
-        IUnitOfWork unitOfWork,
-        ILogger<TransactionBehavior<TRequest, TResponse>> logger)
-    {
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<TransactionBehavior<TRequest, TResponse>> _logger = logger;
 
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
-        // Only apply transaction for commands (operations that modify data)
-        // Queries don't need transactions
-        var requestType = request.GetType();
-        var isCommand = requestType.Name.EndsWith("Command");
+        Type requestType = request.GetType();
+        bool isCommand = requestType.Name.EndsWith("Command", StringComparison.Ordinal);
 
         if (!isCommand)
         {
-            return await next();
+            return await next(cancellationToken);
         }
 
-        var requestName = typeof(TRequest).Name;
+        string requestName = typeof(TRequest).Name;
 
         try
         {
@@ -47,7 +39,7 @@ public class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
             
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
-            var response = await next();
+            TResponse? response = await next(cancellationToken);
 
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
             

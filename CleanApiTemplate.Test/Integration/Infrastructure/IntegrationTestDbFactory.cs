@@ -11,9 +11,8 @@ namespace CleanApiTemplate.Test.Integration.Infrastructure;
 /// Integration test database factory
 /// Provides database context for integration tests using real SQL Server
 /// </summary>
-public class IntegrationTestDbFactory : IAsyncLifetime
+public class IntegrationTestDbFactory : IAsyncLifetime, IAsyncDisposable
 {
-    private readonly string _connectionString;
     private ApplicationDbContext? _dbContext;
     private DbConnection? _dbConnection;
     private Respawner? _respawner;
@@ -21,22 +20,22 @@ public class IntegrationTestDbFactory : IAsyncLifetime
     public IntegrationTestDbFactory()
     {
         // First check for environment variable (used in CI/CD)
-        var envConnectionString = Environment.GetEnvironmentVariable("ConnectionStrings__TestConnection");
+        string? envConnectionString = Environment.GetEnvironmentVariable("ConnectionStrings__TestConnection");
         
         if (!string.IsNullOrEmpty(envConnectionString))
         {
-            _connectionString = envConnectionString;
+            ConnectionString = envConnectionString;
         }
         else
         {
             // Fall back to configuration file (for local development)
-            var configuration = new ConfigurationBuilder()
+            IConfigurationRoot configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.Test.json", optional: true)
                 .AddJsonFile("../../../appsettings.Test.json", optional: true)
                 .Build();
 
-            _connectionString = configuration.GetConnectionString("TestConnection")
+            ConnectionString = configuration.GetConnectionString("TestConnection")
                 ?? "Server=localhost;Database=CleanApiTemplate_Test;User ID=sa;Password=P@ssw0rd;TrustServerCertificate=True;MultipleActiveResultSets=True;Connection Timeout=30;Encrypt=False;";
         }
     }
@@ -47,8 +46,8 @@ public class IntegrationTestDbFactory : IAsyncLifetime
     public async Task InitializeAsync()
     {
         // Create DbContext
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseSqlServer(_connectionString)
+        DbContextOptions<ApplicationDbContext> options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlServer(ConnectionString)
             .Options;
 
         _dbContext = new ApplicationDbContext(options);
@@ -60,7 +59,7 @@ public class IntegrationTestDbFactory : IAsyncLifetime
             await _dbContext.Database.MigrateAsync();
 
             // Initialize Respawner for database cleanup
-            _dbConnection = new SqlConnection(_connectionString);
+            _dbConnection = new SqlConnection(ConnectionString);
             await _dbConnection.OpenAsync();
 
             _respawner = await Respawner.CreateAsync(_dbConnection, new RespawnerOptions
@@ -73,7 +72,7 @@ public class IntegrationTestDbFactory : IAsyncLifetime
         catch (Exception ex)
         {
             throw new InvalidOperationException(
-                $"Failed to initialize test database. Connection string: {_connectionString}. " +
+                $"Failed to initialize test database. Connection string: {ConnectionString}. " +
                 $"Make sure SQL Server is running and accessible. Error: {ex.Message}", ex);
         }
     }
@@ -83,8 +82,8 @@ public class IntegrationTestDbFactory : IAsyncLifetime
     /// </summary>
     public ApplicationDbContext CreateDbContext()
     {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseSqlServer(_connectionString)
+        DbContextOptions<ApplicationDbContext> options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlServer(ConnectionString)
             .Options;
 
         return new ApplicationDbContext(options);
@@ -106,7 +105,7 @@ public class IntegrationTestDbFactory : IAsyncLifetime
     /// </summary>
     public async Task SeedAsync<T>(params T[] entities) where T : class
     {
-        using var context = CreateDbContext();
+        using ApplicationDbContext context = CreateDbContext();
         context.Set<T>().AddRange(entities);
         await context.SaveChangesAsync();
     }
@@ -116,8 +115,8 @@ public class IntegrationTestDbFactory : IAsyncLifetime
     /// </summary>
     public async Task SeedEntitiesAsync(params object[] entities)
     {
-        using var context = CreateDbContext();
-        foreach (var entity in entities)
+        using ApplicationDbContext context = CreateDbContext();
+        foreach (object entity in entities)
         {
             context.Add(entity);
         }
@@ -129,14 +128,14 @@ public class IntegrationTestDbFactory : IAsyncLifetime
     /// </summary>
     public async Task ExecuteSqlAsync(string sql)
     {
-        using var context = CreateDbContext();
+        using ApplicationDbContext context = CreateDbContext();
         await context.Database.ExecuteSqlRawAsync(sql);
     }
 
     /// <summary>
     /// Cleanup resources
     /// </summary>
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_dbContext != null)
         {
@@ -149,10 +148,17 @@ public class IntegrationTestDbFactory : IAsyncLifetime
             await _dbConnection.CloseAsync();
             await _dbConnection.DisposeAsync();
         }
+
+        GC.SuppressFinalize(this);
+    }
+
+    Task IAsyncLifetime.DisposeAsync()
+    {
+        throw new NotImplementedException();
     }
 
     /// <summary>
     /// Get connection string for tests
     /// </summary>
-    public string ConnectionString => _connectionString;
+    public string ConnectionString { get; }
 }

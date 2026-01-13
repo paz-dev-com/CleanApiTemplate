@@ -58,7 +58,7 @@ public class PaginatedResult<T>
     /// </summary>
     public static PaginatedResult<T> Create(IEnumerable<T> source, int pageNumber, int pageSize)
     {
-        var count = source.Count();
+        int count = source.Count();
         var items = source.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
         return new PaginatedResult<T>(items, count, pageNumber, pageSize);
     }
