@@ -1,6 +1,8 @@
 using CleanApiTemplate.Application.Common;
 using CleanApiTemplate.Application.Features.Products.Commands;
 using CleanApiTemplate.Application.Features.Products.Queries;
+using CleanApiTemplate.Core.Entities;
+using CleanApiTemplate.Data.Seeders.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -30,9 +32,10 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Paginated list of products</returns>
     [HttpGet]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(Result<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<Result<PaginatedResult<ProductDto>>>> GetProducts(
+    public async Task<ActionResult<Result<PaginatedResult<ProductDto>>>> GetProductsAsync(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] string? searchTerm = null,
@@ -52,7 +55,7 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
             IncludeInactive = includeInactive
         };
 
-        var result = await _mediator.Send(query, cancellationToken);
+        Result<PaginatedResult<ProductDto>> result = await _mediator.Send(query, cancellationToken);
 
         if (result.IsFailure)
         {
@@ -70,16 +73,17 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Product details</returns>
     [HttpGet("{id}")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(Result<ProductDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Result<ProductDto>>> GetProduct(
+    public async Task<ActionResult<Result<ProductDto>>> GetProductAsync(
         Guid id,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Getting product {ProductId}", id);
 
         var query = new GetProductByIdQuery { Id = id };
-        var result = await _mediator.Send(query, cancellationToken);
+        Result<ProductDto> result = await _mediator.Send(query, cancellationToken);
 
         if (result.IsFailure)
         {
@@ -97,17 +101,18 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Created product ID</returns>
     [HttpPost]
-    [Authorize] // Requires authentication
+    [Authorize(Roles = $"{UserRolesList.Admin}")]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<Result<Guid>>> CreateProduct(
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<Result<Guid>>> CreateProductAsync(
         [FromBody] CreateProductCommand command,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Creating product: {ProductName}", command.Name);
 
-        var result = await _mediator.Send(command, cancellationToken);
+        Result<Guid> result = await _mediator.Send(command, cancellationToken);
 
         if (result.IsFailure)
         {
@@ -116,7 +121,7 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
         }
 
         _logger.LogInformation("Product created successfully: {ProductId}", result.Data);
-        return CreatedAtAction(nameof(GetProduct), new { id = result.Data }, result);
+        return CreatedAtAction(nameof(GetProductAsync), new { id = result.Data }, result);
     }
 
     /// <summary>
@@ -127,12 +132,13 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Success result</returns>
     [HttpPut("{id}")]
-    [Authorize]
+    [Authorize(Roles = $"{UserRolesList.Admin}")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<Result>> UpdateProduct(
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<Result>> UpdateProductAsync(
         Guid id,
         [FromBody] UpdateProductCommand command,
         CancellationToken cancellationToken = default)
@@ -145,14 +151,13 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
             command.Id = id;
         }
 
-        var result = await _mediator.Send(command, cancellationToken);
+        Result result = await _mediator.Send(command, cancellationToken);
 
         if (result.IsFailure)
         {
             _logger.LogWarning("Failed to update product {ProductId}: {Error}", id, result.Error);
             
-            // Return appropriate status code based on error message
-            if (result.Error?.Contains("not found") == true)
+            if (result.Error?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true)
             {
                 return NotFound(result);
             }
@@ -171,19 +176,19 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Success result</returns>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")] // Requires Admin role
+    [Authorize(Roles = $"{UserRolesList.Admin}")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<Result>> DeleteProduct(
+    public async Task<ActionResult<Result>> DeleteProductAsync(
         Guid id,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Deleting product {ProductId}", id);
 
         var command = new DeleteProductCommand { Id = id };
-        var result = await _mediator.Send(command, cancellationToken);
+        Result result = await _mediator.Send(command, cancellationToken);
 
         if (result.IsFailure)
         {

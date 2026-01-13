@@ -2,8 +2,9 @@
 
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/10.0)
 [![Clean Architecture](https://img.shields.io/badge/Architecture-Clean-blue)](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+[![Code Quality](https://img.shields.io/badge/Code%20Quality-EditorConfig-success)](https://editorconfig.org/)
 
-A production-ready, enterprise-grade Clean Architecture API template demonstrating modern .NET 10 development practices, CQRS patterns, security implementation, database optimization, and strict adherence to Clean Architecture principles.
+A production-ready, enterprise-grade Clean Architecture API template demonstrating modern .NET 10 development practices, CQRS patterns, security implementation, database optimization, code quality enforcement, and strict adherence to Clean Architecture principles.
 
 This template **strictly adheres** to Clean Architecture principles:
 - **Pure Domain Layer (Core)** - Zero dependencies, only domain entities and interfaces
@@ -12,6 +13,7 @@ This template **strictly adheres** to Clean Architecture principles:
 - **Interface-Based Abstractions** - All services program to interfaces
 - **High Testability** - 100% mockable components
 - **Infrastructure Independence** - Swap implementations without changing business logic
+- **Code Quality Enforcement** - EditorConfig, analyzers, and formatting rules
 
 ## ➡️ Architecture Overview
 
@@ -540,6 +542,80 @@ public class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
 2. **ValidationBehavior** - Validates request
 3. **TransactionBehavior** - Manages database transaction
 
+## ➡️ Code Quality & Formatting
+
+This template includes comprehensive code quality configuration enforcing consistent style and catching common issues:
+
+### Configuration Files
+
+- **`.editorconfig`** - Code style rules, formatting preferences, naming conventions
+- **`Directory.Build.props`** - MSBuild properties for code analysis
+- **`.vscode/settings.json`** - VS Code format-on-save configuration
+- **`.vscode/extensions.json`** - Recommended VS Code extensions
+
+### Key Features
+
+✅ **Unused Imports Warning** - `IDE0005` warns about unnecessary using directives
+✅ **Code Style Enforcement** - Consistent formatting across all files
+✅ **Naming Conventions** - Interfaces start with `I`, private fields with `_`, async methods end with `Async`
+✅ **Code Analyzers** - Full .NET analyzers enabled with strict rules
+✅ **Format on Save** - Automatic formatting in VS Code and Rider
+✅ **Build-Time Validation** - Code style violations cause build warnings
+
+### Quick Commands
+
+```bash
+# Check code formatting
+dotnet format --verify-no-changes
+
+# Fix code formatting
+dotnet format
+
+# Build with code analysis
+dotnet build
+
+# Remove unused imports (Visual Studio)
+Ctrl+R, Ctrl+G
+```
+
+### IDE Setup
+
+#### Visual Studio 2022
+- Format Document: `Ctrl+K, Ctrl+D`
+- Format Selection: `Ctrl+K, Ctrl+F`
+- Remove Unused Usings: `Ctrl+R, Ctrl+G`
+- EditorConfig automatically applied
+
+#### Visual Studio Code
+- Format Document: `Shift+Alt+F`
+- Format on Save: Already configured in `.vscode/settings.json`
+- Install recommended extensions when prompted
+
+#### JetBrains Rider
+- Format Document: `Ctrl+Alt+Enter`
+- Optimize Imports: `Ctrl+Alt+O`
+- EditorConfig automatically applied
+
+### Code Quality Rules
+
+- ✅ File-scoped namespaces (C# 10+)
+- ✅ Always use braces for control statements
+- ✅ Private fields must start with underscore
+- ✅ Interfaces must start with 'I'
+- ✅ Async methods must end with 'Async'
+- ✅ Remove unused code warnings
+- ✅ Unnecessary cast warnings
+- ✅ Unreachable code warnings
+
+### Documentation
+
+See **[docs/CODE_QUALITY.md](docs/CODE_QUALITY.md)** for complete details on:
+- All code quality rules and their severity
+- IDE configuration for Visual Studio, VS Code, and Rider
+- CI/CD integration examples
+- Troubleshooting common issues
+- Best practices for team collaboration
+
 ## ➡️ Getting Started
 
 ### Prerequisites
@@ -551,23 +627,40 @@ public class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
 ### Setup
 
 1. **Clone the repository**
-2. **Update connection string** in `appsettings.json`
-3. **Run database migrations**:
    ```bash
-   dotnet ef migrations add InitialCreate --project CleanApiTemplate.Data --startup-project CleanApiTemplate.API
+   git clone https://github.com/paz-dev-com/CleanApiTemplate.git
+   cd CleanApiTemplate
+   ```
+
+2. **Restore packages**
+   ```bash
+   dotnet restore
+   ```
+
+3. **Format check (optional)**
+   ```bash
+   dotnet format --verify-no-changes
+   ```
+
+4. **Update connection string** in `appsettings.json`
+
+5. **Run database migrations**:
+   ```bash
    dotnet ef database update --project CleanApiTemplate.Data --startup-project CleanApiTemplate.API
    ```
 
-4. **Configure secrets**:
-   - Update JWT secret in `appsettings.json` (use User Secrets in production)
-   - Configure Azure KeyVault URI if using KeyVault
+6. **Configure secrets**:
+   ```bash
+   cd CleanApiTemplate.API
+   dotnet user-secrets set "JwtSettings:SecretKey" "YourSecretKeyHere-MinimumLength32Characters!"
+   ```
 
-5. **Run the application**:
+7. **Run the application**:
    ```bash
    dotnet run --project CleanApiTemplate.API
    ```
 
-6. **Access Swagger UI**: `https://localhost:5001/swagger`
+8. **Access Swagger UI**: `https://localhost:5001/swagger`
 
 ## ➡️ Testing
 
@@ -615,89 +708,24 @@ public async Task PerformanceBehavior_LogsWarning_WhenRequestTakesLongerThan500m
 }
 ```
 
-## ➡️ NuGet Packages Used
+## ➡️ Documentation
 
-### API Layer
-- `Microsoft.AspNetCore.Authentication.JwtBearer` (10.0.0) - JWT authentication
-- `Serilog.AspNetCore` (10.0.0) - Structured logging
-- `Swashbuckle.AspNetCore` (7.2.0) - Swagger/OpenAPI
-- `MediatR` - CQRS pattern
+### Comprehensive Guides
 
-### Core Layer (Domain) - ZERO Dependencies ✅
-- **NO NuGet packages** - Pure .NET types only
-- Contains only domain entities and interface definitions
+- **[SETUP.md](CleanApiTemplate.API/docs/SETUP.md)** - Complete setup and installation guide
+- **[CODE_QUALITY.md](docs/CODE_QUALITY.md)** - Code formatting and quality rules ✨ NEW
+- **[SECURITY.md](CleanApiTemplate.API/docs/SECURITY.md)** - Security best practices
+- **[DATABASE.md](CleanApiTemplate.API/docs/DATABASE.md)** - Database design and optimization
+- **[TESTING.md](TESTING.md)** - Complete test suite documentation
 
-### Application Layer (Use Cases) - Infrastructure-Free ✅
-- `MediatR` (14.0.0) - CQRS pattern implementation
-- `FluentValidation` (12.1.1) - Input validation
-- `FluentValidation.DependencyInjectionExtensions` (12.1.1) - DI integration
-- `Microsoft.Extensions.Logging.Abstractions` (10.0.0) - Logging interface only
-- **NO** `EntityFrameworkCore` ✅
-- **NO** Azure libraries ✅
-- **NO** infrastructure dependencies ✅
+## ➡️ Best Practices Enforced
 
-### Infrastructure Layer (External Services) ✅
-- `Azure.Security.KeyVault.Secrets` (4.8.0) - Secret management
-- `Azure.Identity` (1.17.1) - Azure authentication
-- `System.IdentityModel.Tokens.Jwt` (8.3.1) - JWT token generation
-- `System.Management.Automation` (7.4.6) - PowerShell execution
-- `System.ServiceProcess.ServiceController` (10.0.0) - Windows service management
-- `Microsoft.EntityFrameworkCore` (10.0.0) - For health checks only
-- `Microsoft.Extensions.Configuration.Abstractions` (10.0.0)
-- `Microsoft.Extensions.DependencyInjection.Abstractions` (10.0.1)
-
-### Data Layer (Persistence) ✅
-- `Microsoft.EntityFrameworkCore.SqlServer` (10.0.0) - SQL Server provider
-- `Microsoft.EntityFrameworkCore.Tools` (10.0.0) - Migrations
-- `Dapper` (2.1.66) - High-performance queries
-
-## ➡️ Project Structure Best Practices
-
-This template follows these organizational principles:
-
-1. **✅ 5-layer architecture**: Core (Domain) → Application (Use Cases) → Infrastructure (Services) + Data (Persistence) → API (Presentation)
-2. **✅ Domain layer (Core) with zero dependencies**: Pure C#, no NuGet packages
-3. **✅ Application layer is infrastructure-free**: Only MediatR, FluentValidation, and logging abstractions
-4. **✅ Infrastructure services separated from Data**: JWT, Crypto, KeyVault, System Interop in Infrastructure layer
-5. **✅ Behaviors in Application layer**: `Application/Behaviors/`
-6. **✅ Features organized by domain**: `Application/Features/Products/`
-7. **✅ All interfaces in Core layer**: Single source of truth for abstractions
-8. **✅ Presentation services in API layer**: `API/Services/CurrentUserService` (depends on HttpContext)
-9. **✅ Proper dependency flow**: API/Infrastructure/Data → Application → Core
-
-## ➡️ Security Best Practices
-
-1. **Never commit secrets** - Use User Secrets, environment variables, or KeyVault
-2. **Use HTTPS** in production
-3. **Implement rate limiting** for APIs
-4. **Validate all inputs** with FluentValidation
-5. **Use parameterized queries** to prevent SQL injection
-6. **Hash passwords** with secure algorithms (PBKDF2)
-7. **Implement proper authorization** with role-based access
-8. **Enable CORS** selectively, not globally
-9. **Keep packages updated** for security patches
-10. **Use connection string encryption** in production
-
-## ➡️ Database Best Practices
-
-1. **Use indexes** for frequently queried columns
-2. **Implement soft deletes** for audit requirements
-3. **Use NoTracking** for read-only queries
-4. **Avoid N+1 queries** with Include or projections
-5. **Use Dapper** for complex read queries
-6. **Implement optimistic concurrency** with row versions
-7. **Monitor query performance** with SQL Server Profiler
-8. **Use transactions** for multi-step operations (via TransactionBehavior)
-9. **Implement audit logging** for compliance
-10. **Regular database maintenance** (index rebuilding, statistics update)
-
-## ➡️ Testing Recommendations
-
-- **Unit Tests**: Test business logic in Application layer handlers (all dependencies are mockable)
-- **Integration Tests**: Test database operations in Data layer
-- **API Tests**: Test endpoints with WebApplicationFactory
-- **Performance Tests**: Benchmark critical operations
-- **Behavior Tests**: Test MediatR pipeline behaviors independently
+### Code Quality ✨ NEW
+- ✅ Consistent code formatting via EditorConfig
+- ✅ Unused imports automatically detected
+- ✅ Naming conventions enforced
+- ✅ Code analyzers enabled
+- ✅ Build-time style validation
 
 ## ➡️ Clean Architecture Compliance Checklist
 

@@ -1,5 +1,6 @@
 using Bogus;
 using CleanApiTemplate.Core.Entities;
+using System.Collections.ObjectModel;
 
 namespace CleanApiTemplate.Test.Common;
 
@@ -12,7 +13,7 @@ public static class TestDataGenerator
         .RuleFor(p => p.Id, f => f.Random.Guid())
         .RuleFor(p => p.Name, f => f.Commerce.ProductName())
         .RuleFor(p => p.Description, f => f.Commerce.ProductDescription())
-        .RuleFor(p => p.Sku, f => f.Commerce.Ean8().ToUpper())
+        .RuleFor(p => p.Sku, f => f.Commerce.Ean8().ToUpper(System.Globalization.CultureInfo.CurrentCulture))
         .RuleFor(p => p.Price, f => f.Finance.Amount(1, 10000))
         .RuleFor(p => p.StockQuantity, f => f.Random.Int(0, 1000))
         .RuleFor(p => p.IsActive, f => f.Random.Bool())
@@ -46,13 +47,13 @@ public static class TestDataGenerator
 
     public static Product GenerateProduct() => ProductFaker.Generate();
     
-    public static List<Product> GenerateProducts(int count) => ProductFaker.Generate(count);
+    public static ReadOnlyCollection<Product> GenerateProducts(int count) => ProductFaker.Generate(count).AsReadOnly();
     
     public static Category GenerateCategory() => CategoryFaker.Generate();
     
-    public static List<Category> GenerateCategories(int count) => CategoryFaker.Generate(count);
+    public static ReadOnlyCollection<Category> GenerateCategories(int count) => CategoryFaker.Generate(count).AsReadOnly();
     
     public static User GenerateUser() => UserFaker.Generate();
     
-    public static List<User> GenerateUsers(int count) => UserFaker.Generate(count);
+    public static ReadOnlyCollection<User> GenerateUsers(int count) => UserFaker.Generate(count).AsReadOnly();
 }

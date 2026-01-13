@@ -44,22 +44,22 @@ public class User : BaseEntity
     /// <summary>
     /// Flag indicating if email is verified
     /// </summary>
-    public bool EmailConfirmed { get; set; } = false;
+    public bool EmailConfirmed { get; set; }
 
     /// <summary>
     /// Flag indicating if phone is verified
     /// </summary>
-    public bool PhoneNumberConfirmed { get; set; } = false;
+    public bool PhoneNumberConfirmed { get; set; }
 
     /// <summary>
     /// Flag for two-factor authentication
     /// </summary>
-    public bool TwoFactorEnabled { get; set; } = false;
+    public bool TwoFactorEnabled { get; set; }
 
     /// <summary>
     /// Number of failed login attempts (for account lockout)
     /// </summary>
-    public int AccessFailedCount { get; set; } = 0;
+    public int AccessFailedCount { get; set; }
 
     /// <summary>
     /// Date when account lockout ends (if locked)

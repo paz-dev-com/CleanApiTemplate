@@ -16,6 +16,11 @@ public class ExceptionHandlingMiddleware(
     private readonly ILogger<ExceptionHandlingMiddleware> _logger = logger;
     private readonly IHostEnvironment _environment = environment;
 
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     public async Task InvokeAsync(HttpContext context)
     {
         try
@@ -47,22 +52,16 @@ public class ExceptionHandlingMiddleware(
             TraceId = context.TraceIdentifier
         };
 
-        // Only include stack trace in development
         if (_environment.IsDevelopment())
         {
             response.Details = exception.StackTrace;
         }
 
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-
-        var json = JsonSerializer.Serialize(response, options);
+        var json = JsonSerializer.Serialize(response, JsonOptions);
         await context.Response.WriteAsync(json);
     }
 
-    private class ErrorResponse
+    private sealed class ErrorResponse
     {
         public int StatusCode { get; set; }
         public string Message { get; set; } = string.Empty;

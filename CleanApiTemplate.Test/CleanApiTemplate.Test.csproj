@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -7,6 +7,12 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    
+    <!-- Suppress test-specific warnings for readability and maintainability -->
+    <!-- CA1861: Constant arrays in tests prioritize readability over micro-optimization -->
+    <!-- CA2201: Generic exceptions acceptable in test scenarios -->
+    <!-- CS1570: XML comment formatting in test files is less critical -->
+    <NoWarn>$(NoWarn);CA1861;CA2201;CS1570</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

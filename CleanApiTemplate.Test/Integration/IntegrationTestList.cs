@@ -5,7 +5,7 @@ namespace CleanApiTemplate.Test.Integration;
 /// All integration tests will run sequentially to avoid database conflicts
 /// </summary>
 [CollectionDefinition("Integration Tests", DisableParallelization = true)]
-public class IntegrationTestCollection
+public class IntegrationTestList
 {
     // This class is never instantiated.
     // It's just a marker for xUnit to group tests.

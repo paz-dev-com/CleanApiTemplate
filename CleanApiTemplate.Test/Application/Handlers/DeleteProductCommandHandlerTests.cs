@@ -35,7 +35,7 @@ public class DeleteProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_ValidCommand_ShouldSoftDeleteProductSuccessfully()
+    public async Task Handle_ValidCommand_ShouldSoftDeleteProductSuccessfullyAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -79,7 +79,7 @@ public class DeleteProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_ProductNotFound_ShouldReturnFailure()
+    public async Task Handle_ProductNotFound_ShouldReturnFailureAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -104,7 +104,7 @@ public class DeleteProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_AlreadyDeletedProduct_ShouldReturnFailure()
+    public async Task Handle_AlreadyDeletedProduct_ShouldReturnFailureAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -139,7 +139,7 @@ public class DeleteProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_NullUsername_ShouldUseSystemAsDeletedBy()
+    public async Task Handle_NullUsername_ShouldUseSystemAsDeletedByAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -171,7 +171,7 @@ public class DeleteProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_ValidCommand_ShouldSetDeletedAtTimestamp()
+    public async Task Handle_ValidCommand_ShouldSetDeletedAtTimestampAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -205,7 +205,7 @@ public class DeleteProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_SoftDelete_ShouldNotRemoveFromDatabase()
+    public async Task Handle_SoftDelete_ShouldNotRemoveFromDatabaseAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -240,7 +240,7 @@ public class DeleteProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_SoftDelete_ShouldPreserveAllProductData()
+    public async Task Handle_SoftDelete_ShouldPreserveAllProductDataAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -290,13 +290,13 @@ public class DeleteProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_CancellationRequested_ShouldPropagateCancellation()
+    public async Task Handle_CancellationRequested_ShouldPropagateCancellationAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();
         var command = new DeleteProductCommand { Id = productId };
         var cancellationTokenSource = new CancellationTokenSource();
-        cancellationTokenSource.Cancel();
+        await cancellationTokenSource.CancelAsync();
 
         _productRepositoryMock
             .Setup(x => x.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
@@ -308,7 +308,7 @@ public class DeleteProductCommandHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task Handle_ValidCommand_ShouldCallUpdateExactlyOnce()
+    public async Task Handle_ValidCommand_ShouldCallUpdateExactlyOnceAsync()
     {
         // Arrange
         var productId = Guid.NewGuid();

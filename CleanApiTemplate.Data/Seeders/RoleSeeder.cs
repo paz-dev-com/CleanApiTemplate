@@ -9,25 +9,19 @@ namespace CleanApiTemplate.Data.Seeders;
 /// Seeder for default roles
 /// Seeds roles with random GUIDs per environment
 /// </summary>
-public class RoleSeeder : ISeeder<ApplicationDbContext>
+public class RoleSeeder(ILogger<RoleSeeder> logger) : ISeeder<ApplicationDbContext>
 {
-    private readonly ILogger<RoleSeeder> _logger;
-
-    public RoleSeeder(ILogger<RoleSeeder> logger)
-    {
-        _logger = logger;
-    }
+    private readonly ILogger<RoleSeeder> _logger = logger;
 
     public async Task SeedAsync(ApplicationDbContext context, CancellationToken cancellationToken = default)
     {
-        // Check if roles already exist
         if (await context.Roles.AnyAsync(cancellationToken))
         {
-            _logger.LogInformation("Roles already exist, skipping seed");
+            _logger.LogSeederSkip("roles");
             return;
         }
 
-        _logger.LogInformation("Seeding default roles...");
+        _logger.LogSeederStart("roles");
 
         var roles = new List<Role>
         {
@@ -66,6 +60,6 @@ public class RoleSeeder : ISeeder<ApplicationDbContext>
         await context.Roles.AddRangeAsync(roles, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Successfully seeded {Count} roles", roles.Count);
+        _logger.LogSeederComplete("roles", roles.Count);
     }
 }

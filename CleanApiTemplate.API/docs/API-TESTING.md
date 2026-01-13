@@ -12,6 +12,8 @@ http://localhost:5000
 
 **POST** `/api/auth/register`
 
+**Authorization:** Anonymous (No authentication required)
+
 ```json
 {
   "username": "johndoe",
@@ -33,9 +35,13 @@ http://localhost:5000
 }
 ```
 
+**Note:** Newly registered users are automatically assigned the "User" role.
+
 ### 2. Login
 
 **POST** `/api/auth/login`
+
+**Authorization:** Anonymous (No authentication required)
 
 ```json
 {
@@ -63,6 +69,8 @@ http://localhost:5000
 ### 3. Get Current User
 
 **GET** `/api/auth/me`
+
+**Authorization:** Requires authentication (Any authenticated user)
 
 **Headers:**
 ```
@@ -92,6 +100,8 @@ Authorization: Bearer {your-jwt-token}
 
 **POST** `/api/auth/refresh`
 
+**Authorization:** Anonymous (No authentication required)
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -120,9 +130,11 @@ Authorization: Bearer {your-jwt-token}
 
 **GET** `/api/products?pageNumber=1&pageSize=10&searchTerm=laptop&categoryId={guid}&includeInactive=false`
 
+**Authorization:** Anonymous (No authentication required - Public endpoint)
+
 **Headers:**
 ```
-Authorization: Bearer {your-jwt-token} (optional for public access)
+Authorization: Bearer {your-jwt-token} (optional)
 ```
 
 **Response (200 OK):**
@@ -159,6 +171,8 @@ Authorization: Bearer {your-jwt-token} (optional for public access)
 
 **GET** `/api/products/{id}`
 
+**Authorization:** Anonymous (No authentication required - Public endpoint)
+
 **Response (200 OK):**
 ```json
 {
@@ -182,6 +196,8 @@ Authorization: Bearer {your-jwt-token} (optional for public access)
 ### 3. Create Product
 
 **POST** `/api/products`
+
+**Authorization:** Requires "Admin" role
 
 **Headers:**
 ```
@@ -210,9 +226,20 @@ Content-Type: application/json
 }
 ```
 
+**Error (403 Forbidden) - If user lacks required role:**
+```json
+{
+  "statusCode": 403,
+  "message": "User does not have the required role: User or Admin",
+  "traceId": "00-trace-id-here-00"
+}
+```
+
 ### 4. Update Product
 
 **PUT** `/api/products/{id}`
+
+**Authorization:** Requires "Admin" role
 
 **Headers:**
 ```
@@ -241,16 +268,25 @@ Content-Type: application/json
 }
 ```
 
+**Error (403 Forbidden) - If user lacks required role:**
+```json
+{
+  "statusCode": 403,
+  "message": "User does not have the required role: User or Admin",
+  "traceId": "00-trace-id-here-00"
+}
+```
+
 ### 5. Delete Product
 
 **DELETE** `/api/products/{id}`
+
+**Authorization:** Requires "Admin" role ONLY
 
 **Headers:**
 ```
 Authorization: Bearer {your-jwt-token}
 ```
-
-**Note:** Requires Admin role
 
 **Response (200 OK):**
 ```json
@@ -260,11 +296,36 @@ Authorization: Bearer {your-jwt-token}
 }
 ```
 
+**Error (403 Forbidden) - If user is not an Admin:**
+```json
+{
+  "statusCode": 403,
+  "message": "User does not have the required role: Admin",
+  "traceId": "00-trace-id-here-00"
+}
+```
+
+## Role-Based Access Control Summary
+
+| Endpoint | Method | Required Role | Description |
+|----------|--------|---------------|-------------|
+| `/api/auth/register` | POST | Anonymous | Anyone can register |
+| `/api/auth/login` | POST | Anonymous | Anyone can login |
+| `/api/auth/refresh` | POST | Anonymous | Anyone can refresh tokens |
+| `/api/auth/me` | GET | Authenticated | Any logged-in user |
+| `/api/products` | GET | Anonymous | Public browsing |
+| `/api/products/{id}` | GET | Anonymous | Public product details |
+| `/api/products` | POST | User or Admin | Create products |
+| `/api/products/{id}` | PUT | User or Admin | Update products |
+| `/api/products/{id}` | DELETE | Admin only | Delete products |
+
 ## Health Checks
 
 ### 1. Application Health
 
 **GET** `/health`
+
+**Authorization:** Anonymous
 
 **Response (200 OK):**
 ```json
@@ -279,6 +340,8 @@ Authorization: Bearer {your-jwt-token}
 ### 2. Database Health
 
 **GET** `/health/db`
+
+**Authorization:** Anonymous
 
 **Response (200 OK):**
 ```json
@@ -320,6 +383,15 @@ Authorization: Bearer {your-jwt-token}
   "data": null,
   "error": "Invalid username or password",
   "validationErrors": null
+}
+```
+
+**OR** (when token is missing or invalid):
+```json
+{
+  "statusCode": 401,
+  "message": "Unauthorized - Valid JWT token required",
+  "traceId": "00-trace-id-here-00"
 }
 ```
 
@@ -376,13 +448,18 @@ curl -X POST https://localhost:5001/api/auth/login \
   }'
 ```
 
-### Get Products with Auth
+### Get Products (No Auth Required)
+```bash
+curl -X GET "https://localhost:5001/api/products?pageNumber=1&pageSize=10"
+```
+
+### Get Products with Auth (Optional)
 ```bash
 curl -X GET "https://localhost:5001/api/products?pageNumber=1&pageSize=10" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE"
 ```
 
-### Create Product
+### Create Product (Requires User or Admin Role)
 ```bash
 curl -X POST https://localhost:5001/api/products \
   -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
@@ -394,6 +471,12 @@ curl -X POST https://localhost:5001/api/products \
     "stockQuantity": 50,
     "categoryId": "CATEGORY_GUID_HERE"
   }'
+```
+
+### Delete Product (Requires Admin Role)
+```bash
+curl -X DELETE https://localhost:5001/api/products/PRODUCT_GUID_HERE \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN_HERE"
 ```
 
 ## Testing with PowerShell
@@ -438,6 +521,23 @@ $headers = @{
 Invoke-RestMethod -Uri "https://localhost:5001/api/products" `
     -Method Get `
     -Headers $headers
+```
+
+### Create Product (Requires User or Admin)
+```powershell
+$productBody = @{
+    name = "Test Product"
+    sku = "TEST-001"
+    price = 99.99
+    stockQuantity = 50
+    categoryId = "CATEGORY_GUID_HERE"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "https://localhost:5001/api/products" `
+    -Method Post `
+    -Headers $headers `
+    -Body $productBody `
+    -ContentType "application/json"
 ```
 
 ## Postman Collection
@@ -493,11 +593,32 @@ dotnet dev-certs https --trust
 - Ensure format is: `Bearer {token}`
 
 ### 403 Forbidden
-- User doesn't have required role
+- User doesn't have required role (User or Admin)
 - Check role assignments in database
-- Verify [Authorize(Roles = "...")] attribute
+- Verify `[Authorize(Roles = "...")]` attribute matches user's roles
+- For DELETE operations, only Admin role is allowed
 
 ## Rate Limiting
 - Default: 100 requests per minute per IP
 - Returns 429 Too Many Requests when exceeded
 - Headers include: X-Rate-Limit-Limit, X-Rate-Limit-Remaining
+
+## Security Notes
+
+1. **Anonymous Endpoints** (`AllowAnonymous`):
+   - Product browsing (GET products)
+   - User registration
+   - Login
+   - Token refresh
+
+2. **User or Admin Required** (`Authorize(Roles = "User,Admin")`):
+   - Create products
+   - Update products
+
+3. **Admin Only** (`Authorize(Roles = "Admin")`):
+   - Delete products
+
+4. **Any Authenticated User** (`Authorize`):
+   - Get current user info
+
+**Best Practice:** Always include the JWT token in the Authorization header for protected endpoints, even if the error message doesn't explicitly state which role is required.
