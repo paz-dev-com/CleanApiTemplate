@@ -119,6 +119,18 @@ If you encounter PackageSourceMapping issues, create/update `nuget.config`:
 </configuration>
 ```
 
+### 2.1. Verify Code Quality Configuration (Optional)
+
+```bash
+# Check code formatting
+dotnet format CleanApiTemplate.sln --verify-no-changes
+
+# If formatting issues are found, fix them
+dotnet format CleanApiTemplate.sln
+```
+
+**Note:** The solution includes comprehensive code quality configuration with EditorConfig, analyzers, and formatting rules. See [CODE_QUALITY.md](../../docs/CODE_QUALITY.md) for details.
+
 ### 3. Update Configuration
 
 Update `appsettings.json` with your connection string:
@@ -265,15 +277,27 @@ The `AzureKeyVaultSecretManager` (in **Infrastructure layer**) will automaticall
 
 ### Recommended VS Code Extensions
 - C# Dev Kit
+- C# (Microsoft)
+- EditorConfig for VS Code
 - REST Client
 - SQLTools
 - GitLens
 - Thunder Client (API testing)
 
+**Note:** A complete list of recommended extensions is available in `.vscode/extensions.json`. VS Code will prompt you to install them when you open the workspace.
+
 ### Recommended Visual Studio Extensions
 - Productivity Power Tools
 - ReSharper (optional)
 - SQL Server Object Explorer
+- Fine Code Coverage (for code coverage visualization)
+
+### Code Quality Tools
+- **EditorConfig**: Automatically applied in all IDEs
+- **dotnet format**: Built-in code formatter (`dotnet format CleanApiTemplate.sln`)
+- **Code Analyzers**: Enabled in all projects via `Directory.Build.props`
+
+**See [CODE_QUALITY.md](../../docs/CODE_QUALITY.md) for complete code quality configuration details.**
 
 ## Testing the API
 

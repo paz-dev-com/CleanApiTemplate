@@ -9,14 +9,9 @@ namespace CleanApiTemplate.Data.Seeders;
 /// Seeder for default roles
 /// Seeds roles with random GUIDs per environment
 /// </summary>
-public class RoleSeeder : ISeeder<ApplicationDbContext>
+public class RoleSeeder(ILogger<RoleSeeder> logger) : ISeeder<ApplicationDbContext>
 {
-    private readonly ILogger<RoleSeeder> _logger;
-
-    public RoleSeeder(ILogger<RoleSeeder> logger)
-    {
-        _logger = logger;
-    }
+    private readonly ILogger<RoleSeeder> _logger = logger;
 
     public async Task SeedAsync(ApplicationDbContext context, CancellationToken cancellationToken = default)
     {

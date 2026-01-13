@@ -156,27 +156,101 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
 
 #### Using in Controllers
 ```csharp
-[Authorize] // Requires authentication
+// Example: Products Controller with explicit role-based authorization
+
+[ApiController]
+[Route("api/[controller]")]
 public class ProductsController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly ICurrentUserService _currentUserService;
     
+    // Public endpoints - No authentication required
     [HttpGet]
-    public async Task<IActionResult> GetAll() 
+    [AllowAnonymous] // Explicitly allow anonymous access for browsing
+    public async Task<IActionResult> GetProducts() 
     { 
-        // _currentUserService.UserId available here
+        // Anyone can browse products
     }
 
-    [Authorize(Roles = "Admin")] // Requires specific role
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id) { }
+    [HttpGet("{id}")]
+    [AllowAnonymous] // Public product details
+    public async Task<IActionResult> GetProduct(Guid id) { }
 
-    [Authorize(Policy = "MinimumAge")] // Requires policy
+    // Authenticated endpoints - Requires User or Admin role
     [HttpPost]
-    public async Task<IActionResult> Create() { }
+    [Authorize(Roles = "Admin")] // Multiple roles accepted (OR logic)
+    public async Task<IActionResult> CreateProduct() 
+    { 
+        // Both regular users and admins can create
+    }
+
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")] // Multiple roles accepted
+    public async Task<IActionResult> UpdateProduct(Guid id) 
+    { 
+        // Both regular users and admins can update
+    }
+
+    // Admin-only endpoints
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")] // Only Admin role allowed
+    public async Task<IActionResult> DeleteProduct(Guid id) 
+    { 
+        // Only administrators can delete
+    }
+
+    // Custom policy-based authorization
+    [HttpPost("sensitive")]
+    [Authorize(Policy = "MinimumAge")] // Requires custom policy
+    public async Task<IActionResult> SensitiveOperation() { }
+}
+
+// Auth Controller - Demonstrates different authentication requirements
+[ApiController]
+[Route("api/[controller]")]
+public class AuthController : ControllerBase
+{
+    // Anonymous endpoints
+    [HttpPost("login")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Login() { }
+
+    [HttpPost("register")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Register() { }
+
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    public async Task<IActionResult> RefreshToken() { }
+
+    // Authenticated endpoint - Any logged-in user
+    [HttpGet("me")]
+    [Authorize] // No role specified = any authenticated user
+    public async Task<IActionResult> GetCurrentUser() 
+    { 
+        // Available to all authenticated users
+    }
 }
 ```
+
+### Role-Based Authorization Summary
+
+| Authorization Attribute | Description | Use Case |
+|------------------------|-------------|----------|
+| `[AllowAnonymous]` | No authentication required | Public endpoints (browsing, login, register) |
+| `[Authorize]` | Any authenticated user | Get current user info, basic protected resources |
+| `[Authorize(Roles = "Admin")]` | Multiple roles (OR logic) | Create/Update operations for regular users and admins |
+| `[Authorize(Roles = "Admin")]` | Single role required | Administrative operations (delete, manage users) |
+| `[Authorize(Policy = "PolicyName")]` | Custom policy | Complex authorization logic (age verification, ownership) |
+
+### Best Practices
+
+1. **Be Explicit**: Always use `[AllowAnonymous]` or `[Authorize]` - don't rely on defaults
+2. **Use Role Constraints**: Specify roles when possible: `[Authorize(Roles = "Admin")]`
+3. **Multiple Roles**: Use comma-separated list for OR logic: `[Authorize(Roles = "Admin")]`
+4. **Custom Policies**: For complex logic, create custom authorization policies
+5. **Least Privilege**: Grant minimal permissions necessary for each role
+6. **Document Endpoints**: Clearly indicate which roles can access each endpoint
 
 ### Current User Service
 

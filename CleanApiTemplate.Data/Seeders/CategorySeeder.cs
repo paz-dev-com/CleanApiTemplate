@@ -9,14 +9,9 @@ namespace CleanApiTemplate.Data.Seeders;
 /// Example seeder for default categories
 /// Demonstrates how to add additional seeders
 /// </summary>
-public class CategorySeeder : ISeeder<ApplicationDbContext>
+public class CategorySeeder(ILogger<CategorySeeder> logger) : ISeeder<ApplicationDbContext>
 {
-    private readonly ILogger<CategorySeeder> _logger;
-
-    public CategorySeeder(ILogger<CategorySeeder> logger)
-    {
-        _logger = logger;
-    }
+    private readonly ILogger<CategorySeeder> _logger = logger;
 
     public async Task SeedAsync(ApplicationDbContext context, CancellationToken cancellationToken = default)
     {

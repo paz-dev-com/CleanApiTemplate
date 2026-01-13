@@ -1,0 +1,21 @@
+<Project>
+  <PropertyGroup>
+    <!-- Enable code analysis -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    
+    <!-- Treat warnings as errors in Release builds (optional, comment out if too strict) -->
+    <TreatWarningsAsErrors Condition="'$(Configuration)' == 'Release'">false</TreatWarningsAsErrors>
+    
+    <!-- Code analysis settings -->
+    <AnalysisMode>All</AnalysisMode>
+    
+    <!-- Enable XML documentation warnings -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn> <!-- Disable CS1591: Missing XML comment for publicly visible type or member -->
+    
+    <!-- Warning level -->
+    <WarningLevel>5</WarningLevel>
+  </PropertyGroup>
+</Project>
