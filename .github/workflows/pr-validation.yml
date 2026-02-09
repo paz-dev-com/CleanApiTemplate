@@ -45,7 +45,7 @@ jobs:
       run: dotnet build ${{ env.SOLUTION_PATH }} --no-restore --configuration Release
     
     - name: Unit Tests
-      run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --no-build --filter "Category!=Integration"
+      run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --filter "Category!=Integration"
     
     - name: Status
       if: success()

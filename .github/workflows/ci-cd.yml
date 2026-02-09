@@ -105,7 +105,6 @@ jobs:
       run: |
         dotnet test ${{ env.TEST_PROJECT }} \
           --configuration Release \
-          --no-build \
           --filter "Category!=Integration" \
           --logger "trx" \
           --logger "console;verbosity=detailed" \
@@ -218,7 +217,6 @@ jobs:
       run: |
         dotnet test ${{ env.TEST_PROJECT }} \
           --configuration Release \
-          --no-build \
           --filter "Category=Integration" \
           --logger "trx" \
           --logger "console;verbosity=detailed" \
