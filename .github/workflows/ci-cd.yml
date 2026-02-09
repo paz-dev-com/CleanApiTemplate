@@ -7,6 +7,11 @@ on:
     branches: [ main, develop ]
   workflow_dispatch:
 
+# Cancel in-progress runs for the same PR or branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   DOTNET_VERSION: '10.0.x'
   SOLUTION_PATH: './CleanApiTemplate.sln'
@@ -31,6 +36,14 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/*.csproj', '**/Directory.Build.props') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
     - name: Restore Dependencies
       run: dotnet restore ${{ env.SOLUTION_PATH }}
     
@@ -50,6 +63,7 @@ jobs:
           **/bin/Release/**
           !**/obj/**
         retention-days: 7
+        compression-level: 6
 
   # ============================================
   # Unit Tests (Fast - No Database)
@@ -68,11 +82,21 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/*.csproj', '**/Directory.Build.props') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
+    - name: Download Build Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+    
     - name: Restore Dependencies
       run: dotnet restore ${{ env.SOLUTION_PATH }}
-    
-    - name: Build
-      run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release --no-restore
     
     - name: List Available Tests
       run: |
@@ -83,6 +107,7 @@ jobs:
       run: |
         dotnet test ${{ env.TEST_PROJECT }} \
           --configuration Release \
+          --no-build \
           --filter "Category!=Integration" \
           --logger "trx" \
           --logger "console;verbosity=detailed" \
@@ -121,6 +146,7 @@ jobs:
         name: unit-test-coverage
         path: TestResults/Unit/**/coverage.cobertura.xml
         retention-days: 30
+        compression-level: 6
 
   # ============================================
   # Integration Tests (With SQL Server)
@@ -155,11 +181,21 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/*.csproj', '**/Directory.Build.props') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
+    - name: Download Build Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+    
     - name: Restore Dependencies
       run: dotnet restore ${{ env.SOLUTION_PATH }}
-    
-    - name: Build
-      run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release --no-restore
     
     - name: Wait for SQL Server
       run: |
@@ -186,6 +222,7 @@ jobs:
       run: |
         dotnet test ${{ env.TEST_PROJECT }} \
           --configuration Release \
+          --no-build \
           --filter "Category=Integration" \
           --logger "trx" \
           --logger "console;verbosity=detailed" \
@@ -224,6 +261,7 @@ jobs:
         name: integration-test-coverage
         path: TestResults/Integration/**/coverage.cobertura.xml
         retention-days: 30
+        compression-level: 6
 
   # ============================================
   # Code Coverage Report & Validation
@@ -289,6 +327,7 @@ jobs:
         name: coverage-report
         path: coveragereport
         retention-days: 30
+        compression-level: 6
     
     - name: Coverage Threshold Check
       if: steps.check_coverage.outputs.has_coverage == 'true'
@@ -344,6 +383,14 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Cache .NET tools
+      uses: actions/cache@v4
+      with:
+        path: ~/.dotnet/tools
+        key: ${{ runner.os }}-dotnet-tools-${{ hashFiles('**/.config/dotnet-tools.json') }}
+        restore-keys: |
+          ${{ runner.os }}-dotnet-tools-
     
     - name: Install Analysis Tools
       run: |
@@ -461,6 +508,17 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/*.csproj', '**/Directory.Build.props') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
+    - name: Restore Dependencies
+      run: dotnet restore ${{ env.SOLUTION_PATH }}
+    
     - name: Run Security Scan
       run: |
         dotnet list package --vulnerable --include-transitive 2>&1 | tee security-scan.txt
@@ -480,6 +538,7 @@ jobs:
         name: security-scan-report
         path: security-scan.txt
         retention-days: 30
+        compression-level: 6
 
   # ============================================
   # Final Status Check

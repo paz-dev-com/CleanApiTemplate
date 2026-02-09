@@ -5,6 +5,11 @@ on:
     branches: [ main, develop ]
     types: [opened, synchronize, reopened]
 
+# Cancel in-progress runs for the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   DOTNET_VERSION: '10.0.x'
   SOLUTION_PATH: './CleanApiTemplate.sln'
@@ -24,6 +29,15 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+    
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/*.csproj', '**/Directory.Build.props') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
     
     - name: Restore
       run: dotnet restore ${{ env.SOLUTION_PATH }}
@@ -32,7 +46,7 @@ jobs:
       run: dotnet build ${{ env.SOLUTION_PATH }} --no-restore --configuration Release
     
     - name: Unit Tests
-      run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --filter "Category!=Integration"
+      run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --no-build --filter "Category!=Integration"
     
     - name: Status
       if: success()
